@@ -26,9 +26,6 @@ class ConversationHistoryViewModel @Inject constructor() : ViewModel() {
                 _state.update { it.copy(searchQuery = event.query) }
                 // TODO: Call usecase to search conversations
             }
-            is ConversationHistoryEvent.OnConversationClick -> {
-                // TODO: Call usecase to load conversation
-            }
             ConversationHistoryEvent.OnNewConversationClick -> {
                 // TODO: Call usecase to create new conversation
             }
@@ -52,14 +49,14 @@ class ConversationHistoryViewModel @Inject constructor() : ViewModel() {
                 // For now, we'll simulate some data
                 val conversations = listOf(
                     ConversationItem(
-                        id = UUID.randomUUID(),
+                        id = 1,
                         title = "General Questions",
                         lastMessage = "What is the capital of France?",
                         timestamp = System.currentTimeMillis() - 3600000,
                         messageCount = 5
                     ),
                     ConversationItem(
-                        id = UUID.randomUUID(),
+                        id = 2,
                         title = "Math Help",
                         lastMessage = "Can you explain quadratic equations?",
                         timestamp = System.currentTimeMillis() - 7200000,

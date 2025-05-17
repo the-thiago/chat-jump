@@ -14,7 +14,7 @@ data class ConversationHistoryState(
 
 @Immutable
 data class ConversationItem(
-    val id: UUID,
+    val id: Int,
     val title: String,
     val lastMessage: String,
     val timestamp: Long,

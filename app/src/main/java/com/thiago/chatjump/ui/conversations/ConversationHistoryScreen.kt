@@ -20,6 +20,7 @@ import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -72,7 +73,7 @@ fun ConversationHistoryScreen(
                 },
                 actions = {
                     IconButton(onClick = onNewConversationClick) {
-                        Icon(Icons.AutoMirrored.Filled.List, "New Conversation")
+                        Icon(Icons.Default.Edit, "New Conversation")
                     }
                 }
             )
@@ -118,7 +119,9 @@ fun ConversationHistoryScreen(
                         items(state.conversations) { conversation ->
                             ConversationItem(
                                 conversation = conversation,
-                                onClick = { viewModel.onEvent(ConversationHistoryEvent.OnConversationClick(conversation.id)) }
+                                onClick = {
+                                    onConversationClick(conversation.id)
+                                }
                             )
                         }
                     }
