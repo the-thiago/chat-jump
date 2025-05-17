@@ -3,14 +3,20 @@ package com.thiago.chatjump.ui.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
+import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+import javax.inject.Inject
 
-class ChatViewModel : ViewModel() {
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    private val getAIResponseUseCase: GetAIResponseUseCase
+) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
@@ -39,31 +45,43 @@ class ChatViewModel : ViewModel() {
                     )
                 }
 
-                // TODO: Call usecase to get AI response
-                // For now, we'll simulate a response
+                // Get AI response
                 viewModelScope.launch {
-                    // Simulate thinking time
-                    kotlinx.coroutines.delay(1000)
-                    
-                    // Add the complete response to messages
-                    val aiMessage = ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = "This is a simulated response.",
-                        isUser = false
-                    )
-                    
-                    _state.update { 
-                        it.copy(
-                            messages = it.messages + aiMessage,
-                            isThinking = false,
-                            scrollToBottom = true
+                    try {
+                        getAIResponseUseCase(_state.value.messages).collect { response ->
+                            _state.update { 
+                                it.copy(
+                                    currentStreamingMessage = response,
+                                    isStreaming = true
+                                )
+                            }
+                        }
+                        
+                        // Add the complete response to messages
+                        val aiMessage = ChatMessage(
+                            id = UUID.randomUUID().toString(),
+                            content = _state.value.currentStreamingMessage,
+                            isUser = false
                         )
-                    }
-
-                    // TODO: Call usecase to save conversation
-                    // This should be called after the first message is sent
-                    if (_state.value.messages.size == 2) {
-                        // TODO: Call usecase to generate and save conversation title
+                        
+                        _state.update { 
+                            it.copy(
+                                messages = it.messages + aiMessage,
+                                isThinking = false,
+                                isStreaming = false,
+                                currentStreamingMessage = "",
+                                scrollToBottom = true
+                            )
+                        }
+                    } catch (e: Exception) {
+                        _state.update { 
+                            it.copy(
+                                isThinking = false,
+                                isStreaming = false,
+                                currentStreamingMessage = ""
+                            )
+                        }
+                        // TODO: Handle error
                     }
                 }
             }
