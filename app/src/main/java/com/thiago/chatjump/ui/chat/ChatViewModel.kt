@@ -4,9 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
+import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
 import com.thiago.chatjump.util.TextToSpeechManager
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -18,13 +18,14 @@ import javax.inject.Inject
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val getAIResponseUseCase: GetAIResponseUseCase,
+    private val createConversationTitleUseCase: CreateConversationTitleUseCase,
     private val textToSpeechManager: TextToSpeechManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
-    private var newChat = false
+    private var newChat = true
 
     init {
         viewModelScope.launch {
@@ -56,6 +57,20 @@ class ChatViewModel @Inject constructor(
                         isThinking = true,
                         scrollToBottom = true
                     )
+                }
+
+                if (newChat) {
+                    newChat = false
+                    viewModelScope.launch {
+                        try {
+                            createConversationTitleUseCase(userMessage).collect { title ->
+                                // TODO: Save the title to the conversation
+                                println("Generated title: $title")
+                            }
+                        } catch (e: Exception) {
+                            println("Error generating title: ${e.message}")
+                        }
+                    }
                 }
 
                 // Get AI response
@@ -121,9 +136,9 @@ class ChatViewModel @Inject constructor(
 
     fun loadConversation(conversationId: Int) {
         if (conversationId == -1) {
-            newChat = true
             return
         }
+        newChat = false
         viewModelScope.launch {
             _state.update { it.copy(isThinking = true) }
             try {
