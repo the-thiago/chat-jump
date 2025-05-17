@@ -8,9 +8,12 @@ import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import com.thiago.chatjump.util.TextToSpeechManager
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -26,6 +29,9 @@ class ChatViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
+
+    private val eventChannel = Channel<ChatUiEvent>()
+    val events = eventChannel.receiveAsFlow()
 
     private var currentConversationId: Int? = null
     private var newChat = true
@@ -58,8 +64,10 @@ class ChatViewModel @Inject constructor(
                         messages = currentState.messages + userMessage,
                         inputText = "",
                         isThinking = true,
-                        scrollToBottom = true
                     )
+                }
+                viewModelScope.launch {
+                    eventChannel.send(ChatUiEvent.ScrollToBottom)
                 }
 
                 // Save user message
@@ -97,10 +105,10 @@ class ChatViewModel @Inject constructor(
                             _state.update { 
                                 it.copy(
                                     currentStreamingMessage = accumulatedResponse,
-                                    scrollToBottom = true,
                                     isThinking = false,
                                 )
                             }
+                            eventChannel.send(ChatUiEvent.ScrollToBottom)
                         }
 
                         // Add the complete response to messages
@@ -114,7 +122,6 @@ class ChatViewModel @Inject constructor(
                             it.copy(
                                 messages = it.messages + aiMessage,
                                 currentStreamingMessage = "",
-                                scrollToBottom = true,
                                 isThinking = false,
                             )
                         }
@@ -128,20 +135,17 @@ class ChatViewModel @Inject constructor(
                             it.copy(
                                 isThinking = false,
                                 currentStreamingMessage = "",
-                                scrollToBottom = true,
                             )
                         }
                         // TODO: Handle error
                     }
+                    eventChannel.send(ChatUiEvent.ScrollToBottom)
                 }
             }
             is ChatEvent.OnPlayResponse -> {
                 textToSpeechManager.stop()
                 textToSpeechManager.speak(event.text)
                 _state.update { it.copy(speakingMessageId = event.messageId) }
-            }
-            ChatEvent.OnScrollToBottom -> {
-                _state.update { it.copy(scrollToBottom = false) }
             }
         }
     }
@@ -173,6 +177,7 @@ class ChatViewModel @Inject constructor(
                             isThinking = false
                         )
                     }
+                    eventChannel.send(ChatUiEvent.ScrollToBottom)
                 }
             } catch (e: Exception) {
                 // TODO: Handle error

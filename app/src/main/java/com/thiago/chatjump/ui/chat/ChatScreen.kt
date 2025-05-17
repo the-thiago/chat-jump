@@ -30,15 +30,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.thiago.chatjump.ui.chat.components.MessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,17 +60,23 @@ fun ChatScreen(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val clipboardManager = LocalClipboardManager.current
-    
+
     // Load conversation if ID is provided
     LaunchedEffect(conversationId) {
         viewModel.loadConversation(conversationId)
     }
-    
-    // Auto-scroll to bottom when new messages arrive
-    LaunchedEffect(state.scrollToBottom) {
-        if (state.scrollToBottom) {
-            listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
-            viewModel.onEvent(ChatEvent.OnScrollToBottom)
+
+    val coroutineScope = rememberCoroutineScope()
+    ObserveAsEvents(
+        flow = viewModel.events,
+    ) { event ->
+        coroutineScope.launch {
+            if (event is ChatUiEvent.ScrollToBottom) {
+                val index = listState.layoutInfo.totalItemsCount - 1
+                if (index > -1) {
+                    listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+                }
+            }
         }
     }
 
@@ -104,14 +119,14 @@ fun ChatScreen(
 
                     // Show thinking bubble when waiting for response
                     if (state.isThinking) {
-                        item {
+                        this.item {
                             ThinkingBubble()
                         }
                     }
 
                     // Show streaming message
                     if (state.currentStreamingMessage.isNotEmpty()) {
-                        item {
+                        this.item {
                             AnimatedVisibility(
                                 visible = true,
                                 enter = fadeIn()
@@ -183,4 +198,19 @@ fun ChatScreen(
             }
         }
     }
-} 
+}
+
+@Composable
+private fun <T> ObserveAsEvents(
+    flow: Flow<T>,
+    onEvent: (T) -> Unit
+) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(flow, lifecycleOwner.lifecycle) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            withContext(Dispatchers.Main.immediate) {
+                flow.collect(onEvent)
+            }
+        }
+    }
+}

@@ -9,5 +9,4 @@ data class ChatState(
     val isSpeaking: Boolean = false,
     val speakingMessageId: String? = null,
     val currentStreamingMessage: String = "",
-    val scrollToBottom: Boolean = false
 ) 
