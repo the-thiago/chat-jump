@@ -8,11 +8,10 @@ import com.thiago.chatjump.ui.chat.ChatScreen
 import com.thiago.chatjump.ui.conversations.ConversationHistoryScreen
 
 sealed class Screen(val route: String) {
-    object Chat : Screen("chat")
-    object ConversationHistory : Screen("conversation_history")
-    object ChatWithId : Screen("chat/{conversationId}") {
-        fun createRoute(conversationId: Int) = "chat/$conversationId"
+    object Chat : Screen("chat/{conversationId}") {
+        fun createRoute(conversationId: Int = -1) = "chat/$conversationId"
     }
+    object ConversationHistory : Screen("conversation_history")
 }
 
 @Composable
@@ -21,47 +20,38 @@ fun ChatNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Chat.route,
+        startDestination = Screen.Chat.createRoute(),
     ) {
-        composable(Screen.Chat.route) {
-            ChatScreen(
-                onConversationHistoryClick = {
-                    navController.navigate(Screen.ConversationHistory.route)
-                },
-                conversationId = 0 // Default ID for new conversation
-            )
-        }
-
-        composable(Screen.ConversationHistory.route) {
-            ConversationHistoryScreen(
-                onConversationClick = { conversationId ->
-                    navController.navigate(Screen.ChatWithId.createRoute(conversationId))
-                },
-                onNewConversationClick = {
-                    navController.navigate(Screen.Chat.route) {
-                        popUpTo(Screen.Chat.route) { inclusive = true }
-                    }
-                },
-                onBackClick = {
-                    navController.navigateUp()
-                }
-            )
-        }
-
         composable(
-            route = Screen.ChatWithId.route,
+            route = Screen.Chat.route,
             arguments = listOf(
                 androidx.navigation.navArgument("conversationId") {
                     type = androidx.navigation.NavType.IntType
                 }
             )
         ) { backStackEntry ->
-            val conversationId = backStackEntry.arguments?.getInt("conversationId") ?: 0
+            val conversationId = backStackEntry.arguments?.getInt("conversationId") ?: -1
             ChatScreen(
                 onConversationHistoryClick = {
                     navController.navigate(Screen.ConversationHistory.route)
                 },
                 conversationId = conversationId
+            )
+        }
+
+        composable(Screen.ConversationHistory.route) {
+            ConversationHistoryScreen(
+                onConversationClick = { conversationId ->
+                    navController.navigate(Screen.Chat.createRoute(conversationId))
+                },
+                onNewConversationClick = {
+                    navController.navigate(Screen.Chat.createRoute()) {
+                        popUpTo(Screen.Chat.route) { inclusive = true }
+                    }
+                },
+                onBackClick = {
+                    navController.navigateUp()
+                }
             )
         }
     }

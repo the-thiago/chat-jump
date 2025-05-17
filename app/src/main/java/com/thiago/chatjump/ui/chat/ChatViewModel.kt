@@ -27,18 +27,7 @@ class ChatViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             textToSpeechManager.isSpeaking.collect { isSpeaking ->
-                _state.update { currentState ->
-                    val updatedMessages = currentState.messages.map { message ->
-                        if (message.id == currentState.speakingMessageId) {
-                            message.copy(isSpeaking = isSpeaking)
-                        } else {
-                            message
-                        }
-                    }
-                    currentState.copy(
-                        messages = updatedMessages,
-                    )
-                }
+                _state.update { it.copy(isSpeaking = isSpeaking) }
             }
         }
     }
@@ -111,13 +100,11 @@ class ChatViewModel @Inject constructor(
                 }
             }
             is ChatEvent.OnPlayResponse -> {
-//                if (_state.value.isSpeaking) {
+                if (_state.value.isSpeaking) {
                     textToSpeechManager.stop()
-                    _state.update { it.copy(speakingMessageId = null) }
-//                } else {
-                    _state.update { it.copy(speakingMessageId = event.messageId) }
+                } else {
                     textToSpeechManager.speak(event.text)
-//                }
+                }
             }
             ChatEvent.OnScrollToBottom -> {
                 _state.update { it.copy(scrollToBottom = false) }
