@@ -17,7 +17,7 @@ class AIChatRepositoryImpl @Inject constructor(
     override suspend fun getResponse(message: ChatMessage): Flow<String> = flow {
         try {
             println("Starting getResponse")
-            openAIClient.getChatCompletion(
+            val response = openAIClient.getChatCompletion(
                 messages = listOf(
                     ChatCompletionMessage(
                         role = if (message.isUser) "user" else "assistant",
@@ -25,6 +25,7 @@ class AIChatRepositoryImpl @Inject constructor(
                     )
                 )
             )
+            emit(response.choices.firstOrNull()?.message?.content ?: "")
         } catch (e: Exception) {
             println("Error in getAIResponse: ${e.message}")
             e.printStackTrace()
