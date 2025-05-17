@@ -15,7 +15,7 @@ class OpenAIClient @Inject constructor(
         messages: List<ChatCompletionMessage>
     ): ChatCompletionResponse {
         return api.createChatCompletion(
-            apiKey = BuildConfig.OPENAI_API_KEY,
+            authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
             request = ChatCompletionRequest(
                 model = "gpt-3.5-turbo",
                 messages = messages,
@@ -28,7 +28,7 @@ class OpenAIClient @Inject constructor(
 interface OpenAIApi {
     @POST("v1/chat/completions")
     suspend fun createChatCompletion(
-        @Header("Authorization") apiKey: String,
+        @Header("Authorization") authorization: String,
         @Body request: ChatCompletionRequest
     ): ChatCompletionResponse
 }
