@@ -3,6 +3,7 @@ package com.thiago.chatjump.ui.chat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
+import com.thiago.chatjump.domain.repository.ChatRepository
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
 import com.thiago.chatjump.util.TextToSpeechManager
@@ -19,12 +20,14 @@ import javax.inject.Inject
 class ChatViewModel @Inject constructor(
     private val getAIResponseUseCase: GetAIResponseUseCase,
     private val createConversationTitleUseCase: CreateConversationTitleUseCase,
+    private val chatRepository: ChatRepository,
     private val textToSpeechManager: TextToSpeechManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
+    private var currentConversationId: Int? = null
     private var newChat = true
 
     init {
@@ -59,13 +62,24 @@ class ChatViewModel @Inject constructor(
                     )
                 }
 
+                // Save user message
+                viewModelScope.launch {
+                    currentConversationId?.let { conversationId ->
+                        chatRepository.saveMessage(conversationId, userMessage)
+                    }
+                }
+
                 if (newChat) {
                     newChat = false
                     viewModelScope.launch {
                         try {
                             createConversationTitleUseCase(userMessage).collect { title ->
-                                // TODO: Save the title to the conversation
-                                println("Generated title: $title")
+                                // Create new conversation with the generated title
+                                currentConversationId = chatRepository.createConversation(title)
+                                // Save the user message to the new conversation
+                                currentConversationId?.let { conversationId ->
+                                    chatRepository.saveMessage(conversationId, userMessage)
+                                }
                             }
                         } catch (e: Exception) {
                             println("Error generating title: ${e.message}")
@@ -104,6 +118,11 @@ class ChatViewModel @Inject constructor(
                                 isThinking = false,
                             )
                         }
+
+                        // Save AI message
+                        currentConversationId?.let { conversationId ->
+                            chatRepository.saveMessage(conversationId, aiMessage)
+                        }
                     } catch (e: Exception) {
                         _state.update { 
                             it.copy(
@@ -117,9 +136,9 @@ class ChatViewModel @Inject constructor(
                 }
             }
             is ChatEvent.OnPlayResponse -> {
-                    textToSpeechManager.stop()
-                    textToSpeechManager.speak(event.text)
-                    _state.update { it.copy(speakingMessageId = event.messageId) }
+                textToSpeechManager.stop()
+                textToSpeechManager.speak(event.text)
+                _state.update { it.copy(speakingMessageId = event.messageId) }
             }
             ChatEvent.OnScrollToBottom -> {
                 _state.update { it.copy(scrollToBottom = false) }
@@ -134,32 +153,30 @@ class ChatViewModel @Inject constructor(
 
     fun loadConversation(conversationId: Int) {
         if (conversationId == -1) {
+            currentConversationId = null
+            newChat = true
+            _state.update { it.copy(messages = emptyList()) }
             return
         }
+
+        currentConversationId = conversationId
         newChat = false
+        
         viewModelScope.launch {
             _state.update { it.copy(isThinking = true) }
             try {
-                // TODO: Call usecase to load conversation
-                // For now, we'll simulate loading
-                kotlinx.coroutines.delay(500)
-                
-                val messages = listOf(
-                    ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = "Hello! How can I help you today?",
-                        isUser = false
-                    )
-                )
-                
-                _state.update { 
-                    it.copy(
-                        messages = messages,
-                        isThinking = false
-                    )
+                // Load messages from database
+                chatRepository.getMessagesForConversation(conversationId).collect { messages ->
+                    _state.update { 
+                        it.copy(
+                            messages = messages,
+                            isThinking = false
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 // TODO: Handle error
+                _state.update { it.copy(isThinking = false) }
             }
         }
     }

@@ -1,7 +1,9 @@
 package com.thiago.chatjump.di
 
 import com.thiago.chatjump.data.repository.AIChatRepositoryImpl
+import com.thiago.chatjump.data.repository.ChatRepositoryImpl
 import com.thiago.chatjump.domain.repository.AIChatRepository
+import com.thiago.chatjump.domain.repository.ChatRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -17,4 +19,10 @@ abstract class RepositoryModule {
     abstract fun bindAIChatRepository(
         aiChatRepositoryImpl: AIChatRepositoryImpl
     ): AIChatRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindChatRepository(
+        chatRepositoryImpl: ChatRepositoryImpl
+    ): ChatRepository
 } 

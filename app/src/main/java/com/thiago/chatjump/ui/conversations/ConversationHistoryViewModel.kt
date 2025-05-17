@@ -2,17 +2,20 @@ package com.thiago.chatjump.ui.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thiago.chatjump.data.local.entity.ConversationEntity
+import com.thiago.chatjump.domain.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
-class ConversationHistoryViewModel @Inject constructor() : ViewModel() {
+class ConversationHistoryViewModel @Inject constructor(
+    private val chatRepository: ChatRepository
+) : ViewModel() {
     private val _state = MutableStateFlow(ConversationHistoryState())
     val state: StateFlow<ConversationHistoryState> = _state.asStateFlow()
 
@@ -24,10 +27,10 @@ class ConversationHistoryViewModel @Inject constructor() : ViewModel() {
         when (event) {
             is ConversationHistoryEvent.OnSearchQueryChange -> {
                 _state.update { it.copy(searchQuery = event.query) }
-                // TODO: Call usecase to search conversations
+                // TODO: Implement search functionality
             }
             ConversationHistoryEvent.OnNewConversationClick -> {
-                // TODO: Call usecase to create new conversation
+                // Handled by the UI
             }
             ConversationHistoryEvent.OnSearchActiveChange -> {
                 _state.update { it.copy(isSearchActive = !it.isSearchActive) }
@@ -45,29 +48,21 @@ class ConversationHistoryViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             try {
-                // TODO: Call usecase to load conversations
-                // For now, we'll simulate some data
-                val conversations = listOf(
-                    ConversationItem(
-                        id = 1,
-                        title = "General Questions",
-                        lastMessage = "What is the capital of France?",
-                        timestamp = System.currentTimeMillis() - 3600000,
-                        messageCount = 5
-                    ),
-                    ConversationItem(
-                        id = 2,
-                        title = "Math Help",
-                        lastMessage = "Can you explain quadratic equations?",
-                        timestamp = System.currentTimeMillis() - 7200000,
-                        messageCount = 3
-                    )
-                )
-                _state.update { 
-                    it.copy(
-                        conversations = conversations,
-                        isLoading = false
-                    )
+                chatRepository.getAllConversations().collect { conversations ->
+                    _state.update { 
+                        it.copy(
+                            conversations = conversations.map { conversation ->
+                                ConversationItem(
+                                    id = conversation.id,
+                                    title = conversation.title,
+                                    lastMessage = "", // We don't need the last message for now
+                                    timestamp = conversation.updatedAt,
+                                    messageCount = 0 // We don't need the message count for now
+                                )
+                            },
+                            isLoading = false
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 _state.update { 
