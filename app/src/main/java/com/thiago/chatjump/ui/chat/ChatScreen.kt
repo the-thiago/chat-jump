@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Send
@@ -31,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
@@ -107,7 +109,7 @@ fun ChatScreen(
                     }
 
                     // Show streaming message
-                    if (state.isStreaming && state.currentStreamingMessage.isNotEmpty()) {
+                    if (state.currentStreamingMessage.isNotEmpty()) {
                         item {
                             AnimatedVisibility(
                                 visible = true,
@@ -116,11 +118,24 @@ fun ChatScreen(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                                        .clip(
+                                            RoundedCornerShape(
+                                                topStart = 16.dp,
+                                                topEnd = 16.dp,
+                                                bottomStart = 16.dp,
+                                                bottomEnd = 16.dp
+                                            )
+                                        )
+                                        .background(
+                                             MaterialTheme.colorScheme.primary
+                                        )
                                         .padding(16.dp)
                                 ) {
                                     Text(
                                         text = state.currentStreamingMessage,
-                                        style = MaterialTheme.typography.bodyLarge
+                                        style = MaterialTheme.typography.bodyLarge,
+                                        color = MaterialTheme.colorScheme.onPrimary
                                     )
                                 }
                             }

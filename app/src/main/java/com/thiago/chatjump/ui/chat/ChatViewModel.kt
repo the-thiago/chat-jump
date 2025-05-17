@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -48,37 +49,40 @@ class ChatViewModel @Inject constructor(
                 // Get AI response
                 viewModelScope.launch {
                     try {
+                        var accumulatedResponse = ""
+                        
                         getAIResponseUseCase(_state.value.messages).collect { response ->
+                            accumulatedResponse += response
                             _state.update { 
                                 it.copy(
-                                    currentStreamingMessage = response,
-                                    isStreaming = true
+                                    currentStreamingMessage = accumulatedResponse,
+                                    scrollToBottom = true,
+                                    isThinking = false,
                                 )
                             }
                         }
-                        
+
                         // Add the complete response to messages
                         val aiMessage = ChatMessage(
                             id = UUID.randomUUID().toString(),
-                            content = _state.value.currentStreamingMessage,
+                            content = accumulatedResponse,
                             isUser = false
                         )
-                        
-                        _state.update { 
+
+                        _state.update {
                             it.copy(
                                 messages = it.messages + aiMessage,
-                                isThinking = false,
-                                isStreaming = false,
                                 currentStreamingMessage = "",
-                                scrollToBottom = true
+                                scrollToBottom = true,
+                                isThinking = false,
                             )
                         }
                     } catch (e: Exception) {
                         _state.update { 
                             it.copy(
                                 isThinking = false,
-                                isStreaming = false,
-                                currentStreamingMessage = ""
+                                currentStreamingMessage = "",
+                                scrollToBottom = true,
                             )
                         }
                         // TODO: Handle error

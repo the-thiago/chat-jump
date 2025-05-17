@@ -4,6 +4,7 @@ import com.thiago.chatjump.data.remote.ChatCompletionMessage
 import com.thiago.chatjump.data.remote.OpenAIClient
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.AIChatRepository
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
@@ -15,17 +16,25 @@ class AIChatRepositoryImpl @Inject constructor(
 ) : AIChatRepository {
 
     override suspend fun getAIResponse(messages: List<ChatMessage>): Flow<String> = flow {
-        val response = openAIClient.getChatCompletion(
-            messages = messages.map { message ->
-                ChatCompletionMessage(
-                    role = if (message.isUser) "user" else "assistant",
-                    content = message.content
-                )
+        try {
+            println("Starting AI response collection...")
+            openAIClient.getStreamingChatCompletion(
+                messages = messages.map { message ->
+                    ChatCompletionMessage(
+                        role = if (message.isUser) "user" else "assistant",
+                        content = message.content
+                    )
+                }
+            ).collect { content ->
+                println("Received content: $content")
+                // Add a small delay between emissions for smoother streaming
+                delay(25)
+                emit(content)
             }
-        )
-        
-        response.choices.firstOrNull()?.message?.content?.let { content ->
-            emit(content)
+        } catch (e: Exception) {
+            println("Error in getAIResponse: ${e.message}")
+            e.printStackTrace()
+            throw e
         }
     }
 }
