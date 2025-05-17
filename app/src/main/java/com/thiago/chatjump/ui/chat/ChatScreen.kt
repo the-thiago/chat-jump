@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -36,12 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
+import com.thiago.chatjump.R
 import com.thiago.chatjump.ui.chat.components.MessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +57,7 @@ import kotlinx.coroutines.withContext
 fun ChatScreen(
     modifier: Modifier = Modifier,
     onConversationHistoryClick: () -> Unit,
+    onRealTimeClick: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel(),
     conversationId: Int
 ) {
@@ -191,6 +195,17 @@ fun ChatScreen(
                                 tint = if (state.inputText.isNotBlank() && !state.isThinking)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            )
+                        }
+
+                        // Wave button
+                        IconButton(
+                            onClick = onRealTimeClick
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.sound_wave),
+                                contentDescription = "Real Time",
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     }

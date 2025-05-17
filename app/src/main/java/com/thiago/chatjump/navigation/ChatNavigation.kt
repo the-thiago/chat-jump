@@ -6,12 +6,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import com.thiago.chatjump.ui.chat.ChatScreen
 import com.thiago.chatjump.ui.conversations.ConversationHistoryScreen
+import com.thiago.chatjump.ui.realtime.RealTimeScreen
 
 sealed class Screen(val route: String) {
     object Chat : Screen("chat/{conversationId}") {
         fun createRoute(conversationId: Int = -1) = "chat/$conversationId"
     }
     object ConversationHistory : Screen("conversation_history")
+    object RealTime : Screen("realtime")
 }
 
 @Composable
@@ -35,6 +37,9 @@ fun ChatNavigation(
                 onConversationHistoryClick = {
                     navController.navigate(Screen.ConversationHistory.route)
                 },
+                onRealTimeClick = {
+                    navController.navigate(Screen.RealTime.route)
+                },
                 conversationId = conversationId
             )
         }
@@ -49,6 +54,14 @@ fun ChatNavigation(
                         popUpTo(Screen.Chat.route) { inclusive = true }
                     }
                 },
+                onBackClick = {
+                    navController.navigateUp()
+                }
+            )
+        }
+
+        composable(Screen.RealTime.route) {
+            RealTimeScreen(
                 onBackClick = {
                     navController.navigateUp()
                 }
