@@ -24,6 +24,8 @@ class ChatViewModel @Inject constructor(
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
 
+    private var newChat = false
+
     init {
         viewModelScope.launch {
             textToSpeechManager.isSpeaking.collect { isSpeaking ->
@@ -118,6 +120,10 @@ class ChatViewModel @Inject constructor(
     }
 
     fun loadConversation(conversationId: Int) {
+        if (conversationId == -1) {
+            newChat = true
+            return
+        }
         viewModelScope.launch {
             _state.update { it.copy(isThinking = true) }
             try {

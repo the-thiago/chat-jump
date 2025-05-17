@@ -14,6 +14,23 @@ import javax.inject.Singleton
 class AIChatRepositoryImpl @Inject constructor(
     private val openAIClient: OpenAIClient
 ) : AIChatRepository {
+    override suspend fun getResponse(message: ChatMessage): Flow<String> = flow {
+        try {
+            println("Starting getResponse")
+            openAIClient.getChatCompletion(
+                messages = listOf(
+                    ChatCompletionMessage(
+                        role = if (message.isUser) "user" else "assistant",
+                        content = message.content
+                    )
+                )
+            )
+        } catch (e: Exception) {
+            println("Error in getAIResponse: ${e.message}")
+            e.printStackTrace()
+            throw e
+        }
+    }
 
     override suspend fun getAIResponse(messages: List<ChatMessage>): Flow<String> = flow {
         try {
