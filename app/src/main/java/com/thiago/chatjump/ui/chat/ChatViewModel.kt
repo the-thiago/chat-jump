@@ -117,11 +117,9 @@ class ChatViewModel @Inject constructor(
                 }
             }
             is ChatEvent.OnPlayResponse -> {
-                if (_state.value.isSpeaking) {
                     textToSpeechManager.stop()
-                } else {
                     textToSpeechManager.speak(event.text)
-                }
+                    _state.update { it.copy(speakingMessageId = event.messageId) }
             }
             ChatEvent.OnScrollToBottom -> {
                 _state.update { it.copy(scrollToBottom = false) }

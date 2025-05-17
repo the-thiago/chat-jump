@@ -7,6 +7,7 @@ data class ChatState(
     val inputText: String = "",
     val isThinking: Boolean = false,
     val isSpeaking: Boolean = false,
+    val speakingMessageId: String? = null,
     val currentStreamingMessage: String = "",
     val scrollToBottom: Boolean = false
 ) 

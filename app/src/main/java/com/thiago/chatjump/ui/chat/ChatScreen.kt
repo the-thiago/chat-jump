@@ -99,8 +99,8 @@ fun ChatScreen(
                         MessageBubble(
                             message = message,
                             onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
-                            onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content)) },
-                            isSpeaking = state.isSpeaking && message == state.messages.lastOrNull()
+                            onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content, message.id)) },
+                            isSpeaking = state.speakingMessageId == message.id && state.isSpeaking
                         )
                     }
 
