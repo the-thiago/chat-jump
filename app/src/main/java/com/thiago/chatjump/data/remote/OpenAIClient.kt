@@ -1,16 +1,15 @@
 package com.thiago.chatjump.data.remote
 
 import com.thiago.chatjump.BuildConfig
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
+import okhttp3.ResponseBody
+import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header
 import retrofit2.http.POST
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.map
-import okhttp3.ResponseBody
-import retrofit2.Response
 
 @Singleton
 class OpenAIClient @Inject constructor(

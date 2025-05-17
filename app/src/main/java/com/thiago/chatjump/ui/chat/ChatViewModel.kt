@@ -4,8 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.ChatRepository
-import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
+import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import com.thiago.chatjump.util.TextToSpeechManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
