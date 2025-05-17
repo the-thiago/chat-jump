@@ -4,10 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -15,21 +12,47 @@ import javax.inject.Inject
 class ConversationHistoryViewModel @Inject constructor(
     private val chatRepository: ChatRepository
 ) : ViewModel() {
+
     private val _state = MutableStateFlow(ConversationHistoryState())
     val state: StateFlow<ConversationHistoryState> = _state.asStateFlow()
 
     init {
-        loadConversations()
+        viewModelScope.launch {
+            // Combine search query with conversations flow
+            combine(
+                chatRepository.getAllConversations(),
+                _state.map { it.searchQuery }
+            ) { conversations, query ->
+                if (query.isBlank()) {
+                    conversations
+                } else {
+                    conversations.filter { conversation ->
+                        conversation.title.contains(query, ignoreCase = true)
+                    }
+                }
+            }.collect { filteredConversations ->
+                _state.update { 
+                    it.copy(
+                        conversations = filteredConversations.map { conversation ->
+                            ConversationItem(
+                                id = conversation.id,
+                                title = conversation.title,
+                                lastMessage = "",
+                                timestamp = conversation.updatedAt,
+                                messageCount = 0
+                            )
+                        },
+                        isLoading = false
+                    )
+                }
+            }
+        }
     }
 
     fun onEvent(event: ConversationHistoryEvent) {
         when (event) {
             is ConversationHistoryEvent.OnSearchQueryChange -> {
                 _state.update { it.copy(searchQuery = event.query) }
-                // TODO: Implement search functionality
-            }
-            ConversationHistoryEvent.OnNewConversationClick -> {
-                // Handled by the UI
             }
             ConversationHistoryEvent.OnSearchActiveChange -> {
                 _state.update { it.copy(isSearchActive = !it.isSearchActive) }
@@ -38,38 +61,7 @@ class ConversationHistoryViewModel @Inject constructor(
                 _state.update { it.copy(error = null) }
             }
             ConversationHistoryEvent.OnRefresh -> {
-                loadConversations()
-            }
-        }
-    }
-
-    private fun loadConversations() {
-        viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
-            try {
-                chatRepository.getAllConversations().collect { conversations ->
-                    _state.update { 
-                        it.copy(
-                            conversations = conversations.map { conversation ->
-                                ConversationItem(
-                                    id = conversation.id,
-                                    title = conversation.title,
-                                    lastMessage = "", // We don't need the last message for now
-                                    timestamp = conversation.updatedAt,
-                                    messageCount = 0 // We don't need the message count for now
-                                )
-                            },
-                            isLoading = false
-                        )
-                    }
-                }
-            } catch (e: Exception) {
-                _state.update { 
-                    it.copy(
-                        error = "Failed to load conversations: ${e.message}",
-                        isLoading = false
-                    )
-                }
+                _state.update { it.copy(isLoading = true) }
             }
         }
     }
