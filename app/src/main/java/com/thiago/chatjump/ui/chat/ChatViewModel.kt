@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
+import com.thiago.chatjump.util.TextToSpeechManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,11 +17,20 @@ import javax.inject.Inject
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
-    private val getAIResponseUseCase: GetAIResponseUseCase
+    private val getAIResponseUseCase: GetAIResponseUseCase,
+    private val textToSpeechManager: TextToSpeechManager
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(ChatState())
     val state: StateFlow<ChatState> = _state.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            textToSpeechManager.isSpeaking.collect { isSpeaking ->
+                _state.update { it.copy(isSpeaking = isSpeaking) }
+            }
+        }
+    }
 
     fun onEvent(event: ChatEvent) {
         when (event) {
@@ -90,12 +100,21 @@ class ChatViewModel @Inject constructor(
                 }
             }
             is ChatEvent.OnPlayResponse -> {
-                // TODO: Call usecase to play text-to-speech
+                if (_state.value.isSpeaking) {
+                    textToSpeechManager.stop()
+                } else {
+                    textToSpeechManager.speak(event.text)
+                }
             }
             ChatEvent.OnScrollToBottom -> {
                 _state.update { it.copy(scrollToBottom = false) }
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        textToSpeechManager.shutdown()
     }
 
     fun loadConversation(conversationId: Int) {

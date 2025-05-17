@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Send
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -67,7 +68,8 @@ fun ThinkingBubble() {
 fun MessageBubble(
     message: ChatMessage,
     onCopy: () -> Unit,
-    onPlay: () -> Unit
+    onPlay: () -> Unit,
+    isSpeaking: Boolean = false
 ) {
     Column(
         modifier = Modifier
@@ -114,8 +116,8 @@ fun MessageBubble(
                 Spacer(modifier = Modifier.width(8.dp))
                 IconButton(onClick = onPlay) {
                     Icon(
-                        imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Play",
+                        imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
+                        contentDescription = if (isSpeaking) "Stop" else "Play",
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }

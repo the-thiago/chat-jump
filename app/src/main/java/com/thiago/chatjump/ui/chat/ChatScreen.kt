@@ -15,6 +15,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,6 +38,7 @@ import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.thiago.chatjump.ui.chat.components.ChatMessageItem
 import com.thiago.chatjump.ui.chat.components.MessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
 
@@ -71,7 +73,7 @@ fun ChatScreen(
                 title = { Text("Chat") },
                 navigationIcon = {
                     IconButton(onClick = onConversationHistoryClick) {
-                        Icon(Icons.Default.List, "Conversation History")
+                        Icon(Icons.AutoMirrored.Filled.List, "Conversation History")
                     }
                 }
             )
@@ -97,7 +99,8 @@ fun ChatScreen(
                         MessageBubble(
                             message = message,
                             onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
-                            onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content)) }
+                            onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content)) },
+                            isSpeaking = state.isSpeaking && message == state.messages.lastOrNull()
                         )
                     }
 
