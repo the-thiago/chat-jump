@@ -1,4 +1,4 @@
-package com.thiago.chatjump.ui.chat
+package com.thiago.chatjump.ui.realtime
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,17 +10,16 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 
-class ChatViewModel : ViewModel() {
+class RealTimeChatViewModel : ViewModel() {
+    private val _state = MutableStateFlow(RealTimeChatState())
+    val state: StateFlow<RealTimeChatState> = _state.asStateFlow()
 
-    private val _state = MutableStateFlow(ChatState())
-    val state: StateFlow<ChatState> = _state.asStateFlow()
-
-    fun onEvent(event: ChatEvent) {
+    fun onEvent(event: RealTimeChatEvent) {
         when (event) {
-            is ChatEvent.OnInputTextChange -> {
+            is RealTimeChatEvent.OnInputTextChange -> {
                 _state.update { it.copy(inputText = event.text) }
             }
-            is ChatEvent.OnSendMessage -> {
+            is RealTimeChatEvent.OnSendMessage -> {
                 if (event.text.isBlank()) return
                 
                 // Add user message
@@ -34,7 +33,7 @@ class ChatViewModel : ViewModel() {
                     currentState.copy(
                         messages = currentState.messages + userMessage,
                         inputText = "",
-                        isThinking = true,
+                        isProcessing = true,
                         scrollToBottom = true
                     )
                 }
@@ -42,8 +41,20 @@ class ChatViewModel : ViewModel() {
                 // TODO: Call usecase to get AI response
                 // For now, we'll simulate a response
                 viewModelScope.launch {
-                    // Simulate thinking time
+                    // Simulate processing time
                     kotlinx.coroutines.delay(1000)
+                    
+                    _state.update { it.copy(isProcessing = false, isSpeaking = true) }
+                    
+                    // Simulate audio waveform
+                    val waveform = List(100) { index ->
+                        kotlin.math.sin(index * 0.1f) * 0.5f + 0.5f
+                    }
+                    
+                    _state.update { it.copy(audioWaveform = waveform) }
+                    
+                    // Simulate speaking time
+                    kotlinx.coroutines.delay(2000)
                     
                     // Add the complete response to messages
                     val aiMessage = ChatMessage(
@@ -55,51 +66,23 @@ class ChatViewModel : ViewModel() {
                     _state.update { 
                         it.copy(
                             messages = it.messages + aiMessage,
-                            isThinking = false,
+                            isSpeaking = false,
+                            audioWaveform = emptyList(),
                             scrollToBottom = true
                         )
                     }
-
-                    // TODO: Call usecase to save conversation
-                    // This should be called after the first message is sent
-                    if (_state.value.messages.size == 2) {
-                        // TODO: Call usecase to generate and save conversation title
-                    }
                 }
             }
-            is ChatEvent.OnPlayResponse -> {
-                // TODO: Call usecase to play text-to-speech
+            RealTimeChatEvent.OnStartListening -> {
+                // TODO: Call usecase to start voice recognition
+                _state.update { it.copy(isListening = true) }
             }
-            ChatEvent.OnScrollToBottom -> {
+            RealTimeChatEvent.OnStopListening -> {
+                // TODO: Call usecase to stop voice recognition
+                _state.update { it.copy(isListening = false) }
+            }
+            RealTimeChatEvent.OnScrollToBottom -> {
                 _state.update { it.copy(scrollToBottom = false) }
-            }
-        }
-    }
-
-    fun loadConversation(conversationId: Int) {
-        viewModelScope.launch {
-            _state.update { it.copy(isThinking = true) }
-            try {
-                // TODO: Call usecase to load conversation
-                // For now, we'll simulate loading
-                kotlinx.coroutines.delay(500)
-                
-                val messages = listOf(
-                    ChatMessage(
-                        id = UUID.randomUUID().toString(),
-                        content = "Hello! How can I help you today?",
-                        isUser = false
-                    )
-                )
-                
-                _state.update { 
-                    it.copy(
-                        messages = messages,
-                        isThinking = false
-                    )
-                }
-            } catch (e: Exception) {
-                // TODO: Handle error
             }
         }
     }

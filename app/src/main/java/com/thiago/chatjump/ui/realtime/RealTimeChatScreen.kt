@@ -1,4 +1,4 @@
-package com.thiago.chatjump.ui.chat
+package com.thiago.chatjump.ui.realtime
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -31,43 +32,30 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.platform.LocalClipboardManager
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.thiago.chatjump.ui.chat.components.MessageBubble
-import com.thiago.chatjump.ui.chat.components.SendButton
-import com.thiago.chatjump.ui.chat.components.ThinkingBubble
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
-import java.util.UUID
+import com.thiago.chatjump.ui.realtime.components.AudioWaveform
+import com.thiago.chatjump.ui.realtime.components.OrbitingLines
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatScreen(
+fun RealTimeChatScreen(
     modifier: Modifier = Modifier,
     onConversationHistoryClick: () -> Unit,
-    viewModel: ChatViewModel = viewModel(),
-    conversationId: Int
+    viewModel: RealTimeChatViewModel = viewModel()
 ) {
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
-    val clipboardManager = LocalClipboardManager.current
-    
-    // Load conversation if ID is provided
-    LaunchedEffect(conversationId) {
-        viewModel.loadConversation(conversationId)
-    }
     
     // Auto-scroll to bottom when new messages arrive
     LaunchedEffect(state.scrollToBottom) {
         if (state.scrollToBottom) {
             listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
-            viewModel.onEvent(ChatEvent.OnScrollToBottom)
+            viewModel.onEvent(RealTimeChatEvent.OnScrollToBottom)
         }
     }
 
@@ -102,36 +90,31 @@ fun ChatScreen(
                     items(state.messages) { message ->
                         MessageBubble(
                             message = message,
-                            onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
-                            onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content)) }
+                            onCopy = { /* Handled by clipboard manager */ },
+                            onPlay = { /* Handled by TTS */ }
                         )
                     }
+                }
 
-                    // Show thinking bubble when waiting for response
-                    if (state.isThinking) {
-                        item {
-                            ThinkingBubble()
+                // Waveform visualization
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    when {
+                        state.isSpeaking -> {
+                            AudioWaveform(
+                                waveform = state.audioWaveform,
+                                isSpeaking = true
+                            )
                         }
-                    }
-
-                    // Show streaming message
-                    if (state.isStreaming && state.currentStreamingMessage.isNotEmpty()) {
-                        item {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = state.currentStreamingMessage,
-                                        style = MaterialTheme.typography.bodyLarge
-                                    )
-                                }
-                            }
+                        state.isProcessing -> {
+                            OrbitingLines(isProcessing = true)
+                        }
+                        else -> {
+                            OrbitingLines()
                         }
                     }
                 }
@@ -149,7 +132,7 @@ fun ChatScreen(
                     ) {
                         OutlinedTextField(
                             value = state.inputText,
-                            onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
+                            onValueChange = { viewModel.onEvent(RealTimeChatEvent.OnInputTextChange(it)) },
                             modifier = Modifier.weight(1f),
                             placeholder = { Text("Type your message...") },
                             maxLines = 10
@@ -157,15 +140,33 @@ fun ChatScreen(
                         
                         Spacer(modifier = Modifier.padding(8.dp))
                         
+                        // Mic button for voice input
+                        IconButton(
+                            onClick = {
+                                if (state.isListening) {
+                                    viewModel.onEvent(RealTimeChatEvent.OnStopListening)
+                                } else {
+                                    viewModel.onEvent(RealTimeChatEvent.OnStartListening)
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Mic,
+                                contentDescription = if (state.isListening) "Stop listening" else "Start listening",
+                                tint = if (state.isListening) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                        
                         // Send button
                         IconButton(
-                            onClick = { viewModel.onEvent(ChatEvent.OnSendMessage(state.inputText)) },
-                            enabled = state.inputText.isNotBlank() && !state.isThinking
+                            onClick = { viewModel.onEvent(RealTimeChatEvent.OnSendMessage(state.inputText)) },
+                            enabled = state.inputText.isNotBlank() && !state.isProcessing
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Send,
                                 contentDescription = "Send",
-                                tint = if (state.inputText.isNotBlank() && !state.isThinking)
+                                tint = if (state.inputText.isNotBlank() && !state.isProcessing)
                                     MaterialTheme.colorScheme.primary
                                 else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                             )
