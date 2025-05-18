@@ -227,7 +227,7 @@ class ChatViewModel @Inject constructor(
                         newChat = false
                     }
                 } catch (e: Exception) {
-                    Log.e("ChatViewModel", "Error generating title: ${e.message}")
+                    Log.e("ChatViewModel", "Error generating title, it will generated again when this conversation is opened again or on retry: ${e.message}")
                 }
             }
         }
