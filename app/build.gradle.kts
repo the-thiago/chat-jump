@@ -108,6 +108,9 @@ dependencies {
     implementation(libs.openai.client)
     implementation(libs.ktor.client.android)
 
+    // Media playback
+    implementation("androidx.media3:media3-exoplayer:1.3.1")
+
     // Markdown
     // compose-markdown for rendering markdown content
     implementation(libs.compose.markdown)

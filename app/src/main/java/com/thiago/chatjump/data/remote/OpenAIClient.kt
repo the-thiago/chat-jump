@@ -7,6 +7,7 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.Header
+import retrofit2.http.Headers
 import retrofit2.http.POST
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -66,6 +67,18 @@ class OpenAIClient @Inject constructor(
             throw e
         }
     }
+
+    suspend fun getSpeech(request: SpeechRequest): ByteArray {
+        val response = api.createSpeech(
+            authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+            request = request
+        )
+        if (!response.isSuccessful) {
+            throw IllegalStateException("Speech request failed: ${response.code()}")
+        }
+        return response.body()?.bytes()
+            ?: throw IllegalStateException("Empty speech response body")
+    }
 }
 
 interface OpenAIApi {
@@ -79,6 +92,14 @@ interface OpenAIApi {
     suspend fun createStreamingChatCompletion(
         @Header("Authorization") authorization: String,
         @Body request: ChatCompletionRequest
+    ): Response<ResponseBody>
+
+    // Speech synthesis
+    @POST("v1/audio/speech")
+    @Headers("Content-Type: application/json")
+    suspend fun createSpeech(
+        @Header("Authorization") authorization: String,
+        @Body request: SpeechRequest
     ): Response<ResponseBody>
 }
 
@@ -99,4 +120,13 @@ data class ChatCompletionResponse(
 
 data class Choice(
     val message: ChatCompletionMessage
+)
+
+// ---------- OpenAI Speech ---------
+
+data class SpeechRequest(
+    val model: String,
+    val input: String,
+    val voice: String = "alloy",
+    val format: String = "mp3"
 ) 

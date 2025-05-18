@@ -147,10 +147,11 @@ class ChatViewModel @Inject constructor(
             is ChatEvent.OnPlayResponse -> {
                 if (event.messageId == state.value.speakingMessageId) {
                     textToSpeechManager.stop()
+                    _state.update { it.copy(speakingMessageId = null) }
                 } else {
                     textToSpeechManager.stop()
-                    textToSpeechManager.speak(event.text)
                     _state.update { it.copy(speakingMessageId = event.messageId) }
+                    textToSpeechManager.speak(event.text)
                 }
             }
         }

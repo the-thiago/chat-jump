@@ -1,89 +1,112 @@
 package com.thiago.chatjump.util
 
 import android.content.Context
-import android.speech.tts.TextToSpeech
-import android.speech.tts.UtteranceProgressListener
+import android.media.MediaPlayer
 import android.util.Log
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.Locale
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
+import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
 
+import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.SpeechRequest
+
+/**
+ * Manager that leverages OpenAI Text-to-Speech (tts-1 / tts-1-hd) API to generate realistic voice
+ * from text, downloads the resulting audio (mp3) and plays it with [MediaPlayer].
+ */
 @Singleton
 class TextToSpeechManager @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
+    private val openAIClient: OpenAIClient
 ) {
-    private var textToSpeech: TextToSpeech? = null
+
+    private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private var mediaPlayer: MediaPlayer? = null
+
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
-    init {
-        initializeTextToSpeech()
-    }
-
-    private fun initializeTextToSpeech() {
-        textToSpeech = TextToSpeech(context) { status ->
-            if (status == TextToSpeech.SUCCESS) {
-                val result = textToSpeech?.setLanguage(Locale.US)
-                if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
-                    Log.e("TextToSpeech", "Language not supported")
-                }
-            } else {
-                Log.e("TextToSpeech", "Initialization failed")
-            }
-        }
-
-        textToSpeech?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
-            override fun onStart(utteranceId: String?) {
-                _isSpeaking.value = true
-            }
-
-            override fun onDone(utteranceId: String?) {
-                _isSpeaking.value = false
-            }
-
-            override fun onError(utteranceId: String?) {
-                _isSpeaking.value = false
-                Log.e("TextToSpeech", "Error speaking text")
-            }
-        })
-    }
-
     fun speak(text: String) {
-        textToSpeech?.let { tts ->
-            if (tts.isSpeaking) {
-                tts.stop()
-            }
-            
-            // Remove markdown formatting for better speech
-            val cleanText = text.replace(Regex("`.*?`"), "")
-                .replace(Regex("\\*.*?\\*"), "")
-                .replace(Regex("\\*\\*.*?\\*\\*"), "")
-                .replace(Regex("#+\\s"), "")
-                .replace(Regex("\\[.*?\\]\\(.*?\\)"), "")
-                .replace(Regex("-\\s"), "")
-                .replace(Regex("```.*?```"), "")
-                .trim()
+        stop() // stop any previous playback
 
-            tts.speak(
-                cleanText,
-                TextToSpeech.QUEUE_FLUSH,
-                null,
-                "message_${System.currentTimeMillis()}"
-            )
+        // Clean markdown for TTS
+        val cleanText = text.replace(Regex("`.*?`"), "")
+            .replace(Regex("\\*\\*|__"), "")
+            .replace(Regex("\\*|_"), "")
+            .replace(Regex("#+\\s"), "")
+            .replace(Regex("\\[.*?\\]\\(.*?\\)"), "")
+            .replace(Regex("-\\s"), "")
+            .replace(Regex("```.*?```"), "")
+            .trim()
+
+        scope.launch {
+            try {
+                _isSpeaking.value = true
+                val audioBytes = openAIClient.getSpeech(
+                    SpeechRequest(
+                        model = "tts-1", // or "tts-1-hd" depending on availability
+                        input = cleanText,
+                        voice = "alloy", // realistic default voice
+                        format = "mp3"
+                    )
+                )
+
+                // Save to temporary file
+                val tempFile = File.createTempFile("openai_tts", ".mp3", context.cacheDir)
+                tempFile.writeBytes(audioBytes)
+
+                // Play using MediaPlayer on main thread
+                launch(Dispatchers.Main) {
+                    try {
+                        mediaPlayer = MediaPlayer().apply {
+                            setDataSource(tempFile.absolutePath)
+                            prepare()
+                            setOnCompletionListener {
+                                _isSpeaking.value = false
+                                it.release()
+                                mediaPlayer = null
+                            }
+                            setOnErrorListener { mp, what, extra ->
+                                _isSpeaking.value = false
+                                mp.release()
+                                mediaPlayer = null
+                                true
+                            }
+                            start()
+                        }
+                        _isSpeaking.value = true
+                    } catch (e: Exception) {
+                        Log.e("OpenAITTS", "Playback error: ${e.message}")
+                        _isSpeaking.value = false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("OpenAITTS", "Failed to fetch speech: ${e.message}")
+                _isSpeaking.value = false
+            }
         }
     }
 
     fun stop() {
-        textToSpeech?.stop()
+        try {
+            mediaPlayer?.stop()
+            mediaPlayer?.release()
+        } catch (_: Exception) {}
+        mediaPlayer = null
         _isSpeaking.value = false
     }
 
     fun shutdown() {
-        textToSpeech?.shutdown()
-        textToSpeech = null
+        stop()
+        scope.cancel()
     }
 } 
