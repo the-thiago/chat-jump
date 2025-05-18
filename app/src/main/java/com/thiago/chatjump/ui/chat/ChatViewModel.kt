@@ -76,14 +76,7 @@ class ChatViewModel @Inject constructor(
                 handleSend(userMessage)
             }
             is ChatEvent.OnPlayResponse -> {
-                if (event.messageId == state.value.speakingMessageId) {
-                    textToSpeechRepositoryImpl.stop()
-                    _state.update { it.copy(speakingMessageId = null) }
-                } else {
-                    textToSpeechRepositoryImpl.stop()
-                    _state.update { it.copy(speakingMessageId = event.messageId) }
-                    textToSpeechRepositoryImpl.speak(event.text)
-                }
+                onPlayResponse(event)
             }
             ChatEvent.OnRetry -> {
                 if (!NetworkUtil.isNetworkAvailable(context)) {
@@ -98,6 +91,20 @@ class ChatViewModel @Inject constructor(
             ChatEvent.OnDismissError -> {
                 _state.update { it.copy(error = null, canRetry = false) }
             }
+        }
+    }
+
+    private fun onPlayResponse(event: ChatEvent.OnPlayResponse) {
+        if (event.messageId == null) {
+            textToSpeechRepositoryImpl.stop()
+            _state.update { it.copy(speakingMessageId = null) }
+        } else if (event.messageId == state.value.speakingMessageId) {
+            textToSpeechRepositoryImpl.stop()
+            _state.update { it.copy(speakingMessageId = null) }
+        } else {
+            textToSpeechRepositoryImpl.stop()
+            _state.update { it.copy(speakingMessageId = event.messageId) }
+            event.text?.let { textToSpeechRepositoryImpl.speak(it) }
         }
     }
 

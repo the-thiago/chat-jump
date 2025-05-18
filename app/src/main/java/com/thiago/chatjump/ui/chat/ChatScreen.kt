@@ -30,6 +30,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -91,6 +92,12 @@ fun ChatScreen(
     LaunchedEffect(imeVisible) {
         if (imeVisible) {
             listState.scrollToItem(0)
+        }
+    }
+
+    DisposableEffect(Unit) { // Stop any playing TTS when this screen leaves composition
+        onDispose {
+            viewModel.onEvent(ChatEvent.OnPlayResponse(null, null))
         }
     }
 
