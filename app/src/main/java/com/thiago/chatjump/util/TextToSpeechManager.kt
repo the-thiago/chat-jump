@@ -15,6 +15,8 @@ import kotlinx.coroutines.cancel
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
+import java.security.MessageDigest
+import java.math.BigInteger
 
 import com.thiago.chatjump.data.remote.OpenAIClient
 import com.thiago.chatjump.data.remote.SpeechRequest
@@ -51,24 +53,25 @@ class TextToSpeechManager @Inject constructor(
         scope.launch {
             try {
                 _isSpeaking.value = true
-                val audioBytes = openAIClient.getSpeech(
-                    SpeechRequest(
-                        model = "tts-1", // or "tts-1-hd" depending on availability
-                        input = cleanText,
-                        voice = "alloy", // realistic default voice
-                        format = "mp3"
-                    )
-                )
+                val cacheFile = getCacheFileForText(cleanText)
 
-                // Save to temporary file
-                val tempFile = File.createTempFile("openai_tts", ".mp3", context.cacheDir)
-                tempFile.writeBytes(audioBytes)
+                if (!cacheFile.exists()) {
+                    val audioBytes = openAIClient.getSpeech(
+                        SpeechRequest(
+                            model = "tts-1", // or "tts-1-hd" depending on availability
+                            input = cleanText,
+                            voice = "alloy",
+                            format = "mp3"
+                        )
+                    )
+                    cacheFile.writeBytes(audioBytes)
+                }
 
                 // Play using MediaPlayer on main thread
                 launch(Dispatchers.Main) {
                     try {
                         mediaPlayer = MediaPlayer().apply {
-                            setDataSource(tempFile.absolutePath)
+                            setDataSource(cacheFile.absolutePath)
                             prepare()
                             setOnCompletionListener {
                                 _isSpeaking.value = false
@@ -108,5 +111,16 @@ class TextToSpeechManager @Inject constructor(
     fun shutdown() {
         stop()
         scope.cancel()
+    }
+
+    private fun getCacheFileForText(text: String): File {
+        val hash = sha256(text)
+        return File(context.cacheDir, "openai_tts_$hash.mp3")
+    }
+
+    private fun sha256(text: String): String {
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(text.toByteArray())
+        return BigInteger(1, digest).toString(16).padStart(64, '0')
     }
 } 
