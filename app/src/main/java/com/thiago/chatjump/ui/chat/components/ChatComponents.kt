@@ -93,10 +93,9 @@ fun MessageBubble(
                 .padding(16.dp)
         ) {
             if (message.isUser) {
-                Text(
-                    text = message.content,
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onPrimary
+                MarkdownText(
+                    markdown = message.content,
+                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onPrimary)
                 )
             } else {
                 MarkdownText(
