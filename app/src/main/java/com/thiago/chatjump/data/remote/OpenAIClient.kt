@@ -1,14 +1,16 @@
 package com.thiago.chatjump.data.remote
 
-import com.thiago.chatjump.BuildConfig
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Header
 import retrofit2.http.Headers
+import retrofit2.http.Multipart
 import retrofit2.http.POST
+import retrofit2.http.Part
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +22,6 @@ class OpenAIClient @Inject constructor(
         messages: List<ChatCompletionMessage>
     ): ChatCompletionResponse {
         return api.createChatCompletion(
-            authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
             request = ChatCompletionRequest(
                 model = "gpt-3.5-turbo",
                 messages = messages,
@@ -35,7 +36,6 @@ class OpenAIClient @Inject constructor(
         println("Starting streaming chat completion...")
         try {
             val response = api.createStreamingChatCompletion(
-                authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
                 request = ChatCompletionRequest(
                     model = "gpt-3.5-turbo",
                     messages = messages,
@@ -69,8 +69,7 @@ class OpenAIClient @Inject constructor(
     }
 
     suspend fun getSpeech(request: SpeechRequest): ByteArray {
-        val response = api.createSpeech(
-            authorization = "Bearer ${BuildConfig.OPENAI_API_KEY}",
+        val response = api.createSpeechJson(
             request = request
         )
         if (!response.isSuccessful) {
@@ -79,28 +78,59 @@ class OpenAIClient @Inject constructor(
         return response.body()?.bytes()
             ?: throw IllegalStateException("Empty speech response body")
     }
+
+    suspend fun transcribeAudio(
+        part: MultipartBody.Part,
+        modelBody: RequestBody,
+        langBody: RequestBody
+    ): Response<TranscriptionResponse> {
+        return api.transcribeAudio(
+            file = part,
+            model = modelBody,
+            language = langBody
+        )
+    }
+
+    suspend fun chatCompletion(@Body request: ChatRequest): Response<ChatResponse> {
+        return api.chatCompletion(request)
+    }
+
+    suspend fun createSpeech(@Body request: SpeechRequest): Response<ResponseBody> {
+        return api.createSpeech(request)
+    }
 }
 
 interface OpenAIApi {
     @POST("v1/chat/completions")
     suspend fun createChatCompletion(
-        @Header("Authorization") authorization: String,
         @Body request: ChatCompletionRequest
     ): ChatCompletionResponse
 
     @POST("v1/chat/completions")
     suspend fun createStreamingChatCompletion(
-        @Header("Authorization") authorization: String,
         @Body request: ChatCompletionRequest
     ): Response<ResponseBody>
 
     // Speech synthesis
     @POST("v1/audio/speech")
     @Headers("Content-Type: application/json")
-    suspend fun createSpeech(
-        @Header("Authorization") authorization: String,
+    suspend fun createSpeechJson(
         @Body request: SpeechRequest
     ): Response<ResponseBody>
+
+    @Multipart
+    @POST("v1/audio/transcriptions")
+    suspend fun transcribeAudio(
+        @Part file: MultipartBody.Part,
+        @Part("model") model: RequestBody,
+        @Part("language") language: RequestBody
+    ): Response<TranscriptionResponse>
+
+    @POST("v1/chat/completions")
+    suspend fun chatCompletion(@Body request: ChatRequest): Response<ChatResponse>
+
+    @POST("v1/audio/speech")
+    suspend fun createSpeech(@Body request: SpeechRequest): Response<ResponseBody>
 }
 
 data class ChatCompletionRequest(
@@ -128,5 +158,27 @@ data class SpeechRequest(
     val model: String,
     val input: String,
     val voice: String = "alloy",
-    val format: String = "mp3"
-) 
+    val response_format: String = "mp3"
+)
+
+data class TranscriptionResponse(
+    val text: String
+)
+
+data class ChatRequest(
+    val model: String = "gpt-3.5-turbo",
+    val messages: List<ChatMessageDto>
+)
+
+data class ChatMessageDto(
+    val role: String,
+    val content: String
+)
+
+data class ChatResponse(
+    val choices: List<ChatChoice>
+)
+
+data class ChatChoice(
+    val message: ChatMessageDto
+)

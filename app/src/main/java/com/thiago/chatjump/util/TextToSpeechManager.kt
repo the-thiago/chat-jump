@@ -3,23 +3,22 @@ package com.thiago.chatjump.util
 import android.content.Context
 import android.media.MediaPlayer
 import android.util.Log
+import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.SpeechRequest
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.cancel
 import java.io.File
+import java.math.BigInteger
+import java.security.MessageDigest
 import javax.inject.Inject
 import javax.inject.Singleton
-import java.security.MessageDigest
-import java.math.BigInteger
-
-import com.thiago.chatjump.data.remote.OpenAIClient
-import com.thiago.chatjump.data.remote.SpeechRequest
 
 /**
  * Manager that leverages OpenAI Text-to-Speech (tts-1 / tts-1-hd) API to generate realistic voice
@@ -61,7 +60,7 @@ class TextToSpeechManager @Inject constructor(
                             model = "tts-1", // or "tts-1-hd" depending on availability
                             input = cleanText,
                             voice = "alloy",
-                            format = "mp3"
+                            response_format = "mp3"
                         )
                     )
                     cacheFile.writeBytes(audioBytes)

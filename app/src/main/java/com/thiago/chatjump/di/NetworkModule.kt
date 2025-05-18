@@ -1,5 +1,6 @@
 package com.thiago.chatjump.di
 
+import com.thiago.chatjump.BuildConfig
 import com.thiago.chatjump.data.remote.OpenAIApi
 import com.thiago.chatjump.data.remote.OpenAIClient
 import dagger.Module
@@ -23,6 +24,12 @@ object NetworkModule {
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .addHeader("Authorization", "Bearer ${BuildConfig.OPENAI_API_KEY}")
+                    .build()
+                chain.proceed(request)
+            }
             .build()
     }
 
