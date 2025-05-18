@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +33,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.thiago.chatjump.domain.model.ChatMessage
@@ -44,39 +53,51 @@ import dev.jeziellago.compose.markdowntext.MarkdownText
 
 @Composable
 fun ThinkingBubble() {
-    val infiniteTransition = rememberInfiniteTransition(label = "thinking")
-    val alpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(300, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "thinking"
-    )
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(
-                RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = 16.dp,
-                    bottomEnd = 16.dp
-                )
-            )
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)
-            )
+            .heightIn(min = 48.dp)
+            .shimmerEffect()
             .padding(16.dp)
     ) {
         Text(
-            text = "Thinking...",
+            text = "Thinking…",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
+}
+
+private fun Modifier.shimmerEffect(
+    enable: Boolean = true,
+    cornerRadius: Dp = 16.dp,
+): Modifier = if (!enable) this else composed {
+    var size by remember { mutableStateOf(IntSize.Zero) }
+
+    val transition = rememberInfiniteTransition(label = "shimmer")
+    val startX by transition.animateFloat(
+        initialValue = -2f * size.width,
+        targetValue = 2f * size.width,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1000, easing = LinearEasing),
+        ), label = "shimmerAnim"
+    )
+
+    this
+        .onGloballyPositioned { size = it.size }
+        .background(
+            brush = Brush.linearGradient(
+                colors = listOf(
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f),
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                ),
+                start = Offset(startX, 0f),
+                end = Offset(startX + size.width, size.height.toFloat())
+            ),
+            shape = RoundedCornerShape(cornerRadius)
+        )
 }
 
 @Composable
@@ -215,4 +236,4 @@ fun StreamingMessageBubble(
             }
         }
     }
-} 
+}
