@@ -177,7 +177,7 @@ fun StreamingMessageBubble(
 
             // Animate the fade-in of the last completed word
             lastWordAlpha.snapTo(0f)
-            lastWordAlpha.animateTo(1f, animationSpec = tween(durationMillis = 150))
+            lastWordAlpha.animateTo(1f, animationSpec = tween(durationMillis = 45))
         } else {
             // Update the last (in-progress) word without triggering animation
             // This covers the scenario where the current word is still streaming
@@ -199,13 +199,13 @@ fun StreamingMessageBubble(
     ) {
         FlowRow {
             words.forEachIndexed { index, word ->
-                val alpha = if (index == words.lastIndex) lastWordAlpha.value else 1f
-
                 Text(
                     text = "$word ",
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 16.sp,
-                    modifier = Modifier.graphicsLayer { this.alpha = alpha }
+                    modifier = Modifier.graphicsLayer {
+                        this.alpha = if (index == words.lastIndex) lastWordAlpha.value else 1f
+                    }
                 )
             }
         }

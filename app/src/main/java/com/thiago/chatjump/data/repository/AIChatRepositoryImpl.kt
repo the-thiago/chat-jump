@@ -46,7 +46,7 @@ class AIChatRepositoryImpl @Inject constructor(
             ).collect { content ->
                 println("Received content: $content")
                 // Add a small delay between emissions for smoother streaming
-                delay(25)
+                delay(50)
                 emit(content)
             }
         } catch (e: Exception) {
