@@ -109,13 +109,8 @@ dependencies {
     implementation(libs.ktor.client.android)
 
     // Markdown
-//    implementation(libs.markwon.core)
-//    implementation(libs.markwon.html)
-//    implementation(libs.markwon.image)
-//    implementation(libs.markwon.syntax.highlight)
-//    implementation(libs.markwon.linkify)
-//    implementation(libs.markwon.ext.tables)
-//    implementation(libs.markwon.ext.tasklist)
+    // compose-markdown for rendering markdown content
+    implementation(libs.compose.markdown)
 
     // Testing
     testImplementation(libs.junit)
