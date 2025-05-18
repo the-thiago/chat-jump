@@ -98,6 +98,7 @@ class ChatViewModel @Inject constructor(
                 // Get AI response
                 viewModelScope.launch {
                     try {
+                        eventChannel.send(ChatUiEvent.ScrollToBottom)
                         delay(300L) // Just to see the thinking bubble
                         var accumulatedResponse = ""
                         
@@ -182,6 +183,8 @@ class ChatViewModel @Inject constructor(
                             isThinking = false
                         )
                     }
+                    // Add a small delay to ensure the UI is ready
+                    delay(100)
                     eventChannel.send(ChatUiEvent.ScrollToBottom)
                 }
             } catch (e: Exception) {

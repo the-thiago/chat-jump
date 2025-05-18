@@ -80,8 +80,18 @@ fun ChatScreen(
             if (event is ChatUiEvent.ScrollToBottom) {
                 val index = listState.layoutInfo.totalItemsCount - 1
                 if (index > -1) {
-                    listState.animateScrollToItem(listState.layoutInfo.totalItemsCount - 1)
+                    listState.animateScrollToItem(index)
                 }
+            }
+        }
+    }
+
+    // Add initial scroll when conversation is loaded
+    LaunchedEffect(state.messages.size) {
+        if (state.messages.isNotEmpty()) {
+            val index = listState.layoutInfo.totalItemsCount - 1
+            if (index > -1) {
+                listState.animateScrollToItem(index)
             }
         }
     }
