@@ -6,22 +6,20 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.repository.VoiceChatRepository
+import com.thiago.chatjump.util.NetworkUtil
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import java.util.Random
 import javax.inject.Inject
-import com.thiago.chatjump.util.NetworkUtil
-import kotlinx.coroutines.channels.Channel
-import androidx.compose.material3.SnackbarDuration
-import com.thiago.chatjump.ui.chat.ChatUiEvent
-import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.update
 
 @HiltViewModel
 class VoiceChatViewModel @Inject constructor(
@@ -35,10 +33,10 @@ class VoiceChatViewModel @Inject constructor(
     val events = eventChannel.receiveAsFlow()
 
     private var loopJob: Job? = null
-    private val SILENCE_THRESHOLD = 2000 // amplitude
-    private val SILENCE_WINDOW_MS = 1000L
-    private val SAMPLE_INTERVAL_MS = 200L
-    private val MIN_VOICE_DURATION_MS = 500L // must speak at least this long above threshold
+    private val silenceThreshold = 2000 // amplitude
+    private val silenceWindowMs = 1000L
+    private val sampleIntervalMs = 200L
+    private val minVoiceDurationMs = 500L // must speak at least this long above threshold
 
     fun onEvent(event: VoiceChatEvent) {
         when (event) {
@@ -73,7 +71,7 @@ class VoiceChatViewModel @Inject constructor(
                 var interruptedByOffline = false
 
                 while (true) {
-                    delay(SAMPLE_INTERVAL_MS)
+                    delay(sampleIntervalMs)
 
                     // If we go offline during recording, stop and discard
                     if (!NetworkUtil.isNetworkAvailable(context)) {
@@ -85,13 +83,13 @@ class VoiceChatViewModel @Inject constructor(
                     val amp = repository.currentAmplitude()
                     val normAmp = (amp / 32767f).coerceIn(0f, 1f)
                     _uiState.value = _uiState.value.copy(userAmplitude = normAmp)
-                    if (amp >= SILENCE_THRESHOLD) {
+                    if (amp >= silenceThreshold) {
                         hasSpoken = true
-                        voiceDuration += SAMPLE_INTERVAL_MS
+                        voiceDuration += sampleIntervalMs
                         silentDuration = 0L
                     } else {
-                        silentDuration += SAMPLE_INTERVAL_MS
-                        if (hasSpoken && silentDuration >= SILENCE_WINDOW_MS) {
+                        silentDuration += sampleIntervalMs
+                        if (hasSpoken && silentDuration >= silenceWindowMs) {
                             break // user finished speaking
                         }
                     }
@@ -109,7 +107,7 @@ class VoiceChatViewModel @Inject constructor(
 
                 _uiState.value = _uiState.value.copy(isThinking = true)
 
-                val spokeEnough = voiceDuration >= MIN_VOICE_DURATION_MS
+                val spokeEnough = voiceDuration >= minVoiceDurationMs
 
                 if (audioFile != null && spokeEnough) {
                     try {

@@ -4,12 +4,12 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thiago.chatjump.data.repository.TextToSpeechRepositoryImpl
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.ChatRepository
 import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
 import com.thiago.chatjump.util.NetworkUtil
-import com.thiago.chatjump.data.repository.TextToSpeechRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel

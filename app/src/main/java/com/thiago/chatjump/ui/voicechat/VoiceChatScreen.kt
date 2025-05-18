@@ -203,23 +203,6 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
 }
 
 @Composable
-private fun RequestPermissionScreen(onRequest: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text("RealChat needs access to your microphone for voice conversations.")
-        Spacer(modifier = Modifier.height(16.dp))
-        Button(onClick = onRequest) {
-            Text("Grant Permission")
-        }
-    }
-}
-
-@Composable
 private fun PermissionRationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
