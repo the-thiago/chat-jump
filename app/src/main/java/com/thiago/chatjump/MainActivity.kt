@@ -8,11 +8,15 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.navigation.compose.rememberNavController
 import com.thiago.chatjump.navigation.ChatNavigation
 import com.thiago.chatjump.ui.theme.ChatJumpTheme
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.core.view.WindowInsetsControllerCompat
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -20,6 +24,14 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ChatJumpTheme {
+                val backgroundColor = MaterialTheme.colorScheme.background
+                // Update system bar colors to match theme
+                SideEffect {
+                    window.statusBarColor = backgroundColor.toArgb()
+                    val isLight = backgroundColor.luminance() > 0.5f
+                    WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = isLight
+                }
+
                 Scaffold( modifier = Modifier.fillMaxSize() ) { innerPadding ->
                     Surface(
                         modifier = Modifier.fillMaxSize().padding(innerPadding),
