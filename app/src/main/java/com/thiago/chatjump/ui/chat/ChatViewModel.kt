@@ -58,15 +58,16 @@ class ChatViewModel @Inject constructor(
                     content = event.text,
                     isUser = true
                 )
-                
-                _state.update { currentState ->
-                    currentState.copy(
-                        messages = currentState.messages + userMessage,
-                        inputText = "",
-                        isThinking = true,
-                    )
-                }
+
                 viewModelScope.launch {
+                    _state.update { currentState ->
+                        currentState.copy(
+                            messages = currentState.messages + userMessage,
+                            inputText = "",
+                            isThinking = true,
+                        )
+                    }
+                    delay(50L) // To make sure the thinking bubble is visible
                     eventChannel.send(ChatUiEvent.ScrollToBottom)
                 }
 
