@@ -17,7 +17,9 @@ import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class VoiceChatRepositoryImpl @Inject constructor(
     private val service: OpenAIClient,
 ) : VoiceChatRepository {
