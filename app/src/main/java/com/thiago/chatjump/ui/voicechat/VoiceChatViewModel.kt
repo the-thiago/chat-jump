@@ -30,7 +30,13 @@ class VoiceChatViewModel @Inject constructor(
     private val SAMPLE_INTERVAL_MS = 200L
     private val MIN_VOICE_DURATION_MS = 500L // must speak at least this long above threshold
 
-    fun startConversation(context: Context) {
+    fun onEvent(event: VoiceChatEvent) {
+        when (event) {
+            is VoiceChatEvent.StartConversation -> startConversation(event.context)
+        }
+    }
+
+    private fun startConversation(context: Context) {
         if (loopJob != null) return // already running
         loopJob = viewModelScope.launch {
             while (true) {

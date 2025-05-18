@@ -1,7 +1,8 @@
 package com.thiago.chatjump.data.repository
 
-import com.thiago.chatjump.data.remote.ChatCompletionMessage
+import android.util.Log
 import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.dto.ChatCompletionMessage
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.AIChatRepository
 import kotlinx.coroutines.delay
@@ -9,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
-import android.util.Log
 
 @Singleton
 class AIChatRepositoryImpl @Inject constructor(

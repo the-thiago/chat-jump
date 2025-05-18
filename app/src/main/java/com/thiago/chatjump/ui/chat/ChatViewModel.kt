@@ -1,13 +1,15 @@
 package com.thiago.chatjump.ui.chat
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.ChatRepository
 import com.thiago.chatjump.domain.usecase.CreateConversationTitleUseCase
 import com.thiago.chatjump.domain.usecase.GetAIResponseUseCase
-import com.thiago.chatjump.util.TextToSpeechManager
 import com.thiago.chatjump.util.NetworkUtil
+import com.thiago.chatjump.data.repository.TextToSpeechRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -20,15 +22,13 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
-import android.content.Context
-import android.util.Log
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
     private val getAIResponseUseCase: GetAIResponseUseCase,
     private val createConversationTitleUseCase: CreateConversationTitleUseCase,
     private val chatRepository: ChatRepository,
-    private val textToSpeechManager: TextToSpeechManager,
+    private val textToSpeechRepositoryImpl: TextToSpeechRepositoryImpl,
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
@@ -45,7 +45,7 @@ class ChatViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            textToSpeechManager.isSpeaking.collect { isSpeaking ->
+            textToSpeechRepositoryImpl.isSpeaking.collect { isSpeaking ->
                 if (!isSpeaking) {
                     _state.update { it.copy(speakingMessageId = null) }
                 }
@@ -77,12 +77,12 @@ class ChatViewModel @Inject constructor(
             }
             is ChatEvent.OnPlayResponse -> {
                 if (event.messageId == state.value.speakingMessageId) {
-                    textToSpeechManager.stop()
+                    textToSpeechRepositoryImpl.stop()
                     _state.update { it.copy(speakingMessageId = null) }
                 } else {
-                    textToSpeechManager.stop()
+                    textToSpeechRepositoryImpl.stop()
                     _state.update { it.copy(speakingMessageId = event.messageId) }
-                    textToSpeechManager.speak(event.text)
+                    textToSpeechRepositoryImpl.speak(event.text)
                 }
             }
             ChatEvent.OnRetry -> {
@@ -127,7 +127,7 @@ class ChatViewModel @Inject constructor(
 
     override fun onCleared() {
         super.onCleared()
-        textToSpeechManager.shutdown()
+        textToSpeechRepositoryImpl.shutdown()
     }
 
     fun loadConversation(conversationId: Int) {

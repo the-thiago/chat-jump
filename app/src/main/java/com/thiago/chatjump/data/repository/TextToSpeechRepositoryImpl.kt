@@ -1,10 +1,11 @@
-package com.thiago.chatjump.util
+package com.thiago.chatjump.data.repository
 
 import android.content.Context
 import android.media.MediaPlayer
 import android.util.Log
 import com.thiago.chatjump.data.remote.OpenAIClient
-import com.thiago.chatjump.data.remote.SpeechRequest
+import com.thiago.chatjump.data.remote.dto.SpeechRequest
+import com.thiago.chatjump.domain.repository.TextToSpeechRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -22,13 +23,13 @@ import javax.inject.Singleton
 
 /**
  * Manager that leverages OpenAI Text-to-Speech (tts-1 / tts-1-hd) API to generate realistic voice
- * from text, downloads the resulting audio (mp3) and plays it with [MediaPlayer].
+ * from text, downloads the resulting audio (mp3) and plays it with [android.media.MediaPlayer].
  */
 @Singleton
-class TextToSpeechManager @Inject constructor(
+class TextToSpeechRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
     private val openAIClient: OpenAIClient
-) {
+) : TextToSpeechRepository {
 
     private val scope = CoroutineScope(Dispatchers.IO + Job())
     private var mediaPlayer: MediaPlayer? = null
@@ -36,7 +37,7 @@ class TextToSpeechManager @Inject constructor(
     private val _isSpeaking = MutableStateFlow(false)
     val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
-    fun speak(text: String) {
+    override fun speak(text: String) {
         stop() // stop any previous playback
 
         // Clean markdown for TTS
@@ -98,7 +99,7 @@ class TextToSpeechManager @Inject constructor(
         }
     }
 
-    fun stop() {
+    override fun stop() {
         try {
             mediaPlayer?.stop()
             mediaPlayer?.release()
@@ -107,7 +108,7 @@ class TextToSpeechManager @Inject constructor(
         _isSpeaking.value = false
     }
 
-    fun shutdown() {
+    override fun shutdown() {
         stop()
         scope.cancel()
     }
@@ -122,4 +123,4 @@ class TextToSpeechManager @Inject constructor(
         val digest = md.digest(text.toByteArray())
         return BigInteger(1, digest).toString(16).padStart(64, '0')
     }
-} 
+}

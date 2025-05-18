@@ -12,4 +12,4 @@ interface ChatRepository {
     fun getMessagesForConversation(conversationId: Int): Flow<List<ChatMessage>>
     suspend fun saveMessage(conversationId: Int, message: ChatMessage)
     suspend fun deleteConversation(id: Int)
-} 
+}

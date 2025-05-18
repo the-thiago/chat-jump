@@ -1,4 +1,4 @@
-package com.thiago.chatjump.ui.voicechat
+package com.thiago.chatjump.ui.voicechat.components
 
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing

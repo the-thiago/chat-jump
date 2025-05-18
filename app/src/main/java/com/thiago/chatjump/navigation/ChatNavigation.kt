@@ -8,14 +8,6 @@ import com.thiago.chatjump.ui.chat.ChatScreen
 import com.thiago.chatjump.ui.conversations.ConversationHistoryScreen
 import com.thiago.chatjump.ui.voicechat.VoiceChatScreen
 
-sealed class Screen(val route: String) {
-    object Chat : Screen("chat/{conversationId}") {
-        fun createRoute(conversationId: Int = -1) = "chat/$conversationId"
-    }
-    object ConversationHistory : Screen("conversation_history")
-    object VoiceChat : Screen("voice_chat")
-}
-
 @Composable
 fun ChatNavigation(
     navController: NavHostController,

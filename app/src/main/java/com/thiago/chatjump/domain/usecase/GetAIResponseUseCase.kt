@@ -11,4 +11,4 @@ class GetAIResponseUseCase @Inject constructor(
     suspend operator fun invoke(messages: List<ChatMessage>): Flow<String> {
         return repository.getAIResponse(messages)
     }
-} 
+}

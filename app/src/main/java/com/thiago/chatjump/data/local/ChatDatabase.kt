@@ -15,4 +15,4 @@ import com.thiago.chatjump.data.local.entity.MessageEntity
 abstract class ChatDatabase : RoomDatabase() {
     abstract fun conversationDao(): ConversationDao
     abstract fun messageDao(): MessageDao
-} 
+}

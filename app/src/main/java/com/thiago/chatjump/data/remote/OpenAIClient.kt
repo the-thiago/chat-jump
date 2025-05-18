@@ -1,5 +1,13 @@
 package com.thiago.chatjump.data.remote
 
+import android.util.Log
+import com.thiago.chatjump.data.remote.dto.ChatCompletionMessage
+import com.thiago.chatjump.data.remote.dto.ChatCompletionRequest
+import com.thiago.chatjump.data.remote.dto.ChatCompletionResponse
+import com.thiago.chatjump.data.remote.dto.ChatRequest
+import com.thiago.chatjump.data.remote.dto.ChatResponse
+import com.thiago.chatjump.data.remote.dto.SpeechRequest
+import com.thiago.chatjump.data.remote.dto.TranscriptionResponse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import okhttp3.MultipartBody
@@ -13,7 +21,6 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import javax.inject.Inject
 import javax.inject.Singleton
-import android.util.Log
 
 @Singleton
 class OpenAIClient @Inject constructor(
@@ -133,53 +140,3 @@ interface OpenAIApi {
     @POST("v1/audio/speech")
     suspend fun createSpeech(@Body request: SpeechRequest): Response<ResponseBody>
 }
-
-data class ChatCompletionRequest(
-    val model: String,
-    val messages: List<ChatCompletionMessage>,
-    val stream: Boolean
-)
-
-data class ChatCompletionMessage(
-    val role: String,
-    val content: String
-)
-
-data class ChatCompletionResponse(
-    val choices: List<Choice>
-)
-
-data class Choice(
-    val message: ChatCompletionMessage
-)
-
-// ---------- OpenAI Speech ---------
-
-data class SpeechRequest(
-    val model: String,
-    val input: String,
-    val voice: String = "alloy",
-    val response_format: String = "mp3"
-)
-
-data class TranscriptionResponse(
-    val text: String
-)
-
-data class ChatRequest(
-    val model: String = "gpt-3.5-turbo",
-    val messages: List<ChatMessageDto>
-)
-
-data class ChatMessageDto(
-    val role: String,
-    val content: String
-)
-
-data class ChatResponse(
-    val choices: List<ChatChoice>
-)
-
-data class ChatChoice(
-    val message: ChatMessageDto
-)

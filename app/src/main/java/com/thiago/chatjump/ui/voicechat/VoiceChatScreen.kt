@@ -42,6 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.thiago.chatjump.ui.voicechat.components.WaveformVisualizer
+import com.thiago.chatjump.ui.voicechat.components.YarnBallVisualizer
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +68,7 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         hasMicPermission = granted
         if (granted) {
-            viewModel.startConversation(context)
+            viewModel.onEvent(VoiceChatEvent.StartConversation(context))
         } else {
             // Determine whether to show rationale or treat as permanently denied
             if (activity != null) {
@@ -82,7 +84,7 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     // Start conversation automatically if permission already granted (e.g., after configuration change)
     LaunchedEffect(hasMicPermission) {
         if (hasMicPermission) {
-            viewModel.startConversation(context)
+            viewModel.onEvent(VoiceChatEvent.StartConversation(context))
         } else {
             permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
         }

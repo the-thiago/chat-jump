@@ -3,10 +3,10 @@ package com.thiago.chatjump.data.repository
 import android.content.Context
 import android.media.MediaRecorder
 import android.os.Environment
-import com.thiago.chatjump.data.remote.ChatMessageDto
-import com.thiago.chatjump.data.remote.ChatRequest
 import com.thiago.chatjump.data.remote.OpenAIClient
-import com.thiago.chatjump.data.remote.SpeechRequest
+import com.thiago.chatjump.data.remote.dto.ChatMessageDto
+import com.thiago.chatjump.data.remote.dto.ChatRequest
+import com.thiago.chatjump.data.remote.dto.SpeechRequest
 import com.thiago.chatjump.domain.repository.VoiceChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

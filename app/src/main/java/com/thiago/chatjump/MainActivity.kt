@@ -12,11 +12,11 @@ import androidx.compose.runtime.SideEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.navigation.compose.rememberNavController
 import com.thiago.chatjump.navigation.ChatNavigation
 import com.thiago.chatjump.ui.theme.ChatJumpTheme
 import dagger.hilt.android.AndroidEntryPoint
-import androidx.core.view.WindowInsetsControllerCompat
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
