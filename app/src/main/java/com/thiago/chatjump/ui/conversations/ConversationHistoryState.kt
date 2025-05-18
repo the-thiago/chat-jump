@@ -1,17 +1,10 @@
 package com.thiago.chatjump.ui.conversations
 
+import com.thiago.chatjump.domain.model.ConversationItem
+
 data class ConversationHistoryState(
     val conversations: List<ConversationItem> = emptyList(),
     val searchQuery: String = "",
     val isSearchActive: Boolean = false,
-    val isLoading: Boolean = false,
-    val error: String? = null
+    val isLoading: Boolean = true,
 )
-
-data class ConversationItem(
-    val id: Int,
-    val title: String,
-    val lastMessage: String,
-    val timestamp: Long,
-    val messageCount: Int
-) 

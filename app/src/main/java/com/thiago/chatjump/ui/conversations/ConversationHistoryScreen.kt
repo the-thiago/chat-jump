@@ -34,7 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.thiago.chatjump.domain.model.ConversationItem
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -96,41 +98,52 @@ fun ConversationHistoryScreen(
                     )
                 },
                 expanded = state.isSearchActive,
-                onExpandedChange = { viewModel.onEvent(ConversationHistoryEvent.OnSearchActiveChange) },
+                onExpandedChange = { },
                 modifier = Modifier.fillMaxWidth()
             ) {
                 // Search suggestions could go here
             }
 
-            // Conversation list
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.align(Alignment.Center)
-                    )
-                } else {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        items(state.conversations) { conversation ->
-                            ConversationItem(
-                                conversation = conversation,
-                                onClick = { onConversationClick(conversation.id) }
-                            )
+                when {
+                    state.isLoading -> {
+                        CircularProgressIndicator(
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    state.conversations.isEmpty() && state.searchQuery.isNotBlank() -> {
+                        Text(
+                            text = "No conversation found",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                    state.conversations.isEmpty() -> {
+                        Text(
+                            text = "Click the pencil icon\nto start a new conversation!",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            modifier = Modifier.align(Alignment.Center),
+                            textAlign = TextAlign.Center,
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            items(state.conversations) { conversation ->
+                                ConversationItem(
+                                    conversation = conversation,
+                                    onClick = { onConversationClick(conversation.id) }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-    }
-
-    // Handle error messages
-    LaunchedEffect(state.error) {
-        state.error?.let {
-            snackbarHostState.showSnackbar(it)
-            viewModel.onEvent(ConversationHistoryEvent.OnDismissError)
         }
     }
 }

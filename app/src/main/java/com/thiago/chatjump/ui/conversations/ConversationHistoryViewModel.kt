@@ -2,6 +2,7 @@ package com.thiago.chatjump.ui.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.thiago.chatjump.domain.model.ConversationItem
 import com.thiago.chatjump.domain.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -23,7 +24,6 @@ class ConversationHistoryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            // Combine search query with conversations flow
             combine(
                 chatRepository.getAllConversations(),
                 _state.map { it.searchQuery }
@@ -58,15 +58,6 @@ class ConversationHistoryViewModel @Inject constructor(
         when (event) {
             is ConversationHistoryEvent.OnSearchQueryChange -> {
                 _state.update { it.copy(searchQuery = event.query) }
-            }
-            ConversationHistoryEvent.OnSearchActiveChange -> {
-                _state.update { it.copy(isSearchActive = !it.isSearchActive) }
-            }
-            ConversationHistoryEvent.OnDismissError -> {
-                _state.update { it.copy(error = null) }
-            }
-            ConversationHistoryEvent.OnRefresh -> {
-                _state.update { it.copy(isLoading = true) }
             }
         }
     }

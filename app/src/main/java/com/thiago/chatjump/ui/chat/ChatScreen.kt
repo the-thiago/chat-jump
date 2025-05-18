@@ -121,7 +121,7 @@ fun ChatScreen(
                         value = state.inputText,
                         onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Type your message...") },
+                        placeholder = { Text("Ask anything") },
                         maxLines = 10
                     )
 
@@ -165,6 +165,20 @@ fun ChatScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
+                if (state.messages.isEmpty() && !state.isThinking && state.currentStreamingMessage.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "What can I help with?",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+                        )
+                    }
+                }
                 // Messages list
                 LazyColumn(
                     state = listState,
