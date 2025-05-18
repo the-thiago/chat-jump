@@ -62,13 +62,6 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     var showRationale by remember { mutableStateOf(false) }
     var permanentlyDenied by remember { mutableStateOf(false) }
 
-    // Start conversation automatically if permission already granted (e.g., after configuration change)
-    LaunchedEffect(hasMicPermission) {
-        if (hasMicPermission) {
-            viewModel.startConversation(context)
-        }
-    }
-
     // Launcher to request the permission
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         hasMicPermission = granted
@@ -86,12 +79,17 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
         }
     }
 
+    // Start conversation automatically if permission already granted (e.g., after configuration change)
+    LaunchedEffect(hasMicPermission) {
+        if (hasMicPermission) {
+            viewModel.startConversation(context)
+        } else {
+            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+        }
+    }
+
     // UI
     when {
-        hasMicPermission -> {
-            // Main conversation UI with visualizer
-            VisualizerScreen(uiState)
-        }
         showRationale -> {
             // Show rationale dialog explaining why we need the permission
             PermissionRationaleDialog(
@@ -114,10 +112,7 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
             })
         }
         else -> {
-            // Initial request UI
-            RequestPermissionScreen(onRequest = {
-                permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
-            })
+            VisualizerScreen(uiState)
         }
     }
 }
