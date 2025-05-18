@@ -22,7 +22,7 @@ okhttp = "4.12.0"
 openai = "3.7.0"
 ktor = "2.3.7"
 hiltNavigationCompose = "1.2.0"
-markwon = "4.6.2"
+compose-util = "1.8.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -61,6 +61,7 @@ okhttp-core = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "
 okhttp-logging-interceptor = { group = "com.squareup.okhttp3", name = "logging-interceptor", version.ref = "okhttp" }
 openai-client = { module = "com.aallam.openai:openai-client", version.ref = "openai" }
 ktor-client-android = { module = "io.ktor:ktor-client-android", version.ref = "ktor" }
+compose-util = { module = "androidx.compose.ui:ui-util", version.ref = "compose-util" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

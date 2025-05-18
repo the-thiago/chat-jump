@@ -31,18 +31,28 @@ fun ThinkingBubble() {
     val infiniteTransition = rememberInfiniteTransition(label = "thinking")
     val alpha by infiniteTransition.animateFloat(
         initialValue = 0.2f,
-        targetValue = 0.8f,
+        targetValue = 1f,
         animationSpec = infiniteRepeatable(
-            animation = tween(1000, easing = LinearEasing),
+            animation = tween(300, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
         label = "thinking"
     )
-
     Box(
         modifier = Modifier
-            .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha))
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(
+                RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = 16.dp,
+                    bottomEnd = 16.dp
+                )
+            )
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = alpha)
+            )
             .padding(16.dp)
     ) {
         Text(
