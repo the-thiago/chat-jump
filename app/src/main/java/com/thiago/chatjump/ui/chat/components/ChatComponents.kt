@@ -116,7 +116,7 @@ fun MessageBubble(
             } else {
                 MarkdownText(
                     markdown = message.content,
-                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface)
                 )
             }
         }
