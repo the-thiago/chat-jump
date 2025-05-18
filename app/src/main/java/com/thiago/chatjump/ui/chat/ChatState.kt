@@ -8,4 +8,6 @@ data class ChatState(
     val isThinking: Boolean = false,
     val speakingMessageId: String? = null,
     val currentStreamingMessage: String = "",
+    val error: String? = null,
+    val canRetry: Boolean = false,
 ) 

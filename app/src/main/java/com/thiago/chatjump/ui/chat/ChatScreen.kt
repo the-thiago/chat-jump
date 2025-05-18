@@ -26,11 +26,15 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -62,6 +66,7 @@ fun ChatScreen(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val clipboardManager = LocalClipboardManager.current
+    val snackbarHostState = remember { SnackbarHostState() }
 
     // Load conversation if ID is provided
     LaunchedEffect(conversationId) {
@@ -104,7 +109,57 @@ fun ChatScreen(
                     }
                 }
             )
-        }
+        },
+        bottomBar = {
+            // Input area relocated to bottomBar so Snackbar appears above it
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(16.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    OutlinedTextField(
+                        value = state.inputText,
+                        onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
+                        modifier = Modifier.weight(1f),
+                        placeholder = { Text("Type your message...") },
+                        maxLines = 10
+                    )
+
+                    Spacer(modifier = Modifier.padding(8.dp))
+
+                    // Send button
+                    IconButton(
+                        onClick = { viewModel.onEvent(ChatEvent.OnSendMessage(state.inputText)) },
+                        enabled = state.inputText.isNotBlank() && !state.isThinking
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Send",
+                            tint = if (state.inputText.isNotBlank() && !state.isThinking)
+                                MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        )
+                    }
+
+                    // Wave button
+                    IconButton(
+                        onClick = onRealTimeClick
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.sound_wave),
+                            contentDescription = "Real Time",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+            }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
         Surface(
             modifier = modifier.fillMaxSize(),
@@ -120,8 +175,8 @@ fun ChatScreen(
                     state = listState,
                     reverseLayout = true,
                     modifier = Modifier
-                        .weight(1f)
                         .fillMaxWidth()
+                        .weight(1f)
                 ) {
                     // Extra placeholders (thinking/streaming) should be at the bottom when present
                     if (state.isThinking) {
@@ -147,55 +202,21 @@ fun ChatScreen(
                         )
                     }
                 }
-
-                // Input area
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .padding(16.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedTextField(
-                            value = state.inputText,
-                            onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
-                            modifier = Modifier.weight(1f),
-                            placeholder = { Text("Type your message...") },
-                            maxLines = 10
-                        )
-                        
-                        Spacer(modifier = Modifier.padding(8.dp))
-                        
-                        // Send button
-                        IconButton(
-                            onClick = { viewModel.onEvent(ChatEvent.OnSendMessage(state.inputText)) },
-                            enabled = state.inputText.isNotBlank() && !state.isThinking
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Send",
-                                tint = if (state.inputText.isNotBlank() && !state.isThinking)
-                                    MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                            )
-                        }
-
-                        // Wave button
-                        IconButton(
-                            onClick = onRealTimeClick
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.sound_wave),
-                                contentDescription = "Real Time",
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-                }
             }
+        }
+    }
+
+    // Show snackbar above bottomBar
+    LaunchedEffect(state.error, state.canRetry) {
+        state.error?.let { message ->
+            val result = snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = if (state.canRetry) "Retry" else null
+            )
+            if (result == SnackbarResult.ActionPerformed && state.canRetry) {
+                viewModel.onEvent(ChatEvent.OnRetry)
+            }
+            viewModel.onEvent(ChatEvent.OnDismissError)
         }
     }
 }
