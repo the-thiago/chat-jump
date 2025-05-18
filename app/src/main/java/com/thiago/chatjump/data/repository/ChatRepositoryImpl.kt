@@ -5,6 +5,7 @@ import com.thiago.chatjump.data.local.dao.MessageDao
 import com.thiago.chatjump.data.local.entity.ConversationEntity
 import com.thiago.chatjump.data.local.entity.MessageEntity
 import com.thiago.chatjump.domain.model.ChatMessage
+import com.thiago.chatjump.domain.model.ConversationItem
 import com.thiago.chatjump.domain.repository.ChatRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -17,23 +18,23 @@ class ChatRepositoryImpl @Inject constructor(
     private val messageDao: MessageDao
 ) : ChatRepository {
 
-    override fun getAllConversations(): Flow<List<ConversationEntity>> {
-        return conversationDao.getAllConversations()
-    }
-
-    override suspend fun getConversationById(id: Int): ConversationEntity? {
-        return conversationDao.getConversationById(id)
+    override fun getAllConversations(): Flow<List<ConversationItem>> {
+        return conversationDao.getAllConversations().map {
+            it.map {
+                ConversationItem(
+                    id = it.id,
+                    title = it.title,
+                    lastMessage = "",
+                    timestamp = it.updatedAt,
+                    messageCount = 0
+                )
+            }
+        }
     }
 
     override suspend fun createConversation(title: String): Int {
         val conversation = ConversationEntity(title = title)
         return conversationDao.insertConversation(conversation).toInt()
-    }
-
-    override suspend fun updateConversationTitle(id: Int, title: String) {
-        conversationDao.getConversationById(id)?.let { conversation ->
-            conversationDao.updateConversation(conversation.copy(title = title))
-        }
     }
 
     override fun getMessagesForConversation(conversationId: Int): Flow<List<ChatMessage>> {
@@ -59,9 +60,5 @@ class ChatRepositoryImpl @Inject constructor(
                 timestamp = message.timestamp
             )
         )
-    }
-
-    override suspend fun deleteConversation(id: Int) {
-        conversationDao.deleteConversation(id)
     }
 } 

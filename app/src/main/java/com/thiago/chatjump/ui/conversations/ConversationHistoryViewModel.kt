@@ -38,16 +38,8 @@ class ConversationHistoryViewModel @Inject constructor(
             }.collect { filteredConversations ->
                 _state.update { 
                     it.copy(
-                        conversations = filteredConversations.map { conversation ->
-                            ConversationItem(
-                                id = conversation.id,
-                                title = conversation.title,
-                                lastMessage = "",
-                                timestamp = conversation.updatedAt,
-                                messageCount = 0
-                            )
-                        },
-                        isLoading = false
+                        conversations = filteredConversations,
+                        isLoading = false,
                     )
                 }
             }
