@@ -6,10 +6,13 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -55,7 +58,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun ChatScreen(
     modifier: Modifier = Modifier,
@@ -79,9 +82,11 @@ fun ChatScreen(
     ) { event ->
         coroutineScope.launch {
             if (event is ChatUiEvent.ScrollToBottom) {
-                val index = listState.layoutInfo.totalItemsCount - 1
-                if (index > -1) {
-                    listState.animateScrollToItem(index)
+//                if (listState.firstVisibleItemIndex != 0) {
+//                    listState.animateScrollToItem(0)
+//                }
+                if (state.messages.isNotEmpty()) {
+                    listState.animateScrollToItem(0)
                 }
             }
         }
@@ -90,10 +95,14 @@ fun ChatScreen(
     // Add initial scroll when conversation is loaded
     LaunchedEffect(state.messages.size) {
         if (state.messages.isNotEmpty()) {
-            val index = listState.layoutInfo.totalItemsCount - 1
-            if (index > -1) {
-                listState.animateScrollToItem(index)
-            }
+            listState.animateScrollToItem(0)
+        }
+    }
+
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(imeVisible) {
+        if (imeVisible) {
+            listState.animateScrollToItem(0)
         }
     }
 
@@ -121,34 +130,34 @@ fun ChatScreen(
                 // Messages list
                 LazyColumn(
                     state = listState,
+                    reverseLayout = true,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()
                 ) {
-                    items(state.messages) { message ->
+                    // Extra placeholders (thinking/streaming) should be at the bottom when present
+                    if (state.isThinking) {
+                        item {
+                            ThinkingBubble()
+                        }
+                    }
+
+                    if (state.currentStreamingMessage.isNotEmpty()) {
+                        item {
+                            StreamingMessageBubble(
+                                text = state.currentStreamingMessage,
+                                modifier = Modifier.animateContentSize()
+                            )
+                        }
+                    }
+
+                    items(state.messages.asReversed()) { message ->
                         MessageBubble(
                             message = message,
                             onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
                             onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content, message.id)) },
                             isSpeaking = state.speakingMessageId == message.id && state.isSpeaking
                         )
-                    }
-
-                    // Show thinking bubble when waiting for response
-                    if (state.isThinking) {
-                        this.item {
-                            ThinkingBubble()
-                        }
-                    }
-
-                    // Show streaming message
-                    if (state.currentStreamingMessage.isNotEmpty()) {
-                        this.item {
-                            StreamingMessageBubble(
-                                text = state.currentStreamingMessage,
-                                modifier = Modifier.animateContentSize()
-                            )
-                        }
                     }
                 }
 

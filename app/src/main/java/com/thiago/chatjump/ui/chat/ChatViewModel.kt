@@ -101,7 +101,7 @@ class ChatViewModel @Inject constructor(
                         eventChannel.send(ChatUiEvent.ScrollToBottom)
                         delay(300L) // Just to see the thinking bubble
                         var accumulatedResponse = ""
-                        
+
                         getAIResponseUseCase(_state.value.messages).collect { response ->
                             accumulatedResponse += response
                             _state.update { 
@@ -119,6 +119,7 @@ class ChatViewModel @Inject constructor(
                             content = accumulatedResponse,
                             isUser = false
                         )
+                        eventChannel.send(ChatUiEvent.ScrollToBottom)
 
                         _state.update {
                             it.copy(
@@ -127,6 +128,7 @@ class ChatViewModel @Inject constructor(
                                 isThinking = false,
                             )
                         }
+                        eventChannel.send(ChatUiEvent.ScrollToBottom)
 
                         // Save AI message
                         currentConversationId?.let { conversationId ->
