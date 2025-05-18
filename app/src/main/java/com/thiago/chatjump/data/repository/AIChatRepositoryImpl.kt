@@ -1,7 +1,7 @@
 package com.thiago.chatjump.data.repository
 
 import android.util.Log
-import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.OpenAIDataSource
 import com.thiago.chatjump.data.remote.dto.ChatCompletionMessage
 import com.thiago.chatjump.domain.model.ChatMessage
 import com.thiago.chatjump.domain.repository.AIChatRepository
@@ -13,12 +13,12 @@ import javax.inject.Singleton
 
 @Singleton
 class AIChatRepositoryImpl @Inject constructor(
-    private val openAIClient: OpenAIClient
+    private val openAIDataSource: OpenAIDataSource
 ) : AIChatRepository {
     override suspend fun getResponse(message: ChatMessage): Flow<String> = flow {
         try {
             Log.i("AIChatRepo", "Starting getResponse")
-            val response = openAIClient.getChatCompletion(
+            val response = openAIDataSource.getChatCompletion(
                 messages = listOf(
                     ChatCompletionMessage(
                         role = if (message.isUser) "user" else "assistant",
@@ -37,7 +37,7 @@ class AIChatRepositoryImpl @Inject constructor(
     override suspend fun getAIResponse(messages: List<ChatMessage>): Flow<String> = flow {
         try {
             Log.i("AIChatRepo", "Starting AI response collection...")
-            openAIClient.getStreamingChatCompletion(
+            openAIDataSource.getStreamingChatCompletion(
                 messages = messages.map { message ->
                     ChatCompletionMessage(
                         role = if (message.isUser) "user" else "assistant",

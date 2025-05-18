@@ -3,7 +3,7 @@ package com.thiago.chatjump.data.repository
 import android.content.Context
 import android.media.MediaPlayer
 import android.util.Log
-import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.OpenAIDataSource
 import com.thiago.chatjump.data.remote.dto.SpeechRequest
 import com.thiago.chatjump.domain.repository.TextToSpeechRepository
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -28,7 +28,7 @@ import javax.inject.Singleton
 @Singleton
 class TextToSpeechRepositoryImpl @Inject constructor(
     @ApplicationContext private val context: Context,
-    private val openAIClient: OpenAIClient
+    private val openAIDataSource: OpenAIDataSource
 ) : TextToSpeechRepository {
 
     private var scope: CoroutineScope? = CoroutineScope(Dispatchers.IO + Job())
@@ -59,7 +59,7 @@ class TextToSpeechRepositoryImpl @Inject constructor(
                 val cacheFile = getCacheFileForText(cleanText)
 
                 if (!cacheFile.exists()) {
-                    val audioBytes = openAIClient.getSpeech(
+                    val audioBytes = openAIDataSource.getSpeech(
                         SpeechRequest(
                             model = "tts-1", // or "tts-1-hd" depending on availability
                             input = cleanText,

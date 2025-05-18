@@ -2,7 +2,7 @@ package com.thiago.chatjump.di
 
 import com.thiago.chatjump.BuildConfig
 import com.thiago.chatjump.data.remote.OpenAIApi
-import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.OpenAIDataSource
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -51,7 +51,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideOpenAIClient(api: OpenAIApi): OpenAIClient {
-        return OpenAIClient(api)
+    fun provideOpenAIClient(api: OpenAIApi): OpenAIDataSource {
+        return OpenAIDataSource(api)
     }
 } 

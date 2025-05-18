@@ -15,17 +15,14 @@ import okhttp3.RequestBody
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.Body
-import retrofit2.http.Headers
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class OpenAIClient @Inject constructor(
+class OpenAIDataSource @Inject constructor(
     private val api: OpenAIApi
 ) {
+
     suspend fun getChatCompletion(
         messages: List<ChatCompletionMessage>
     ): ChatCompletionResponse {
@@ -106,37 +103,4 @@ class OpenAIClient @Inject constructor(
     suspend fun createSpeech(@Body request: SpeechRequest): Response<ResponseBody> {
         return api.createSpeech(request)
     }
-}
-
-interface OpenAIApi {
-    @POST("v1/chat/completions")
-    suspend fun createChatCompletion(
-        @Body request: ChatCompletionRequest
-    ): ChatCompletionResponse
-
-    @POST("v1/chat/completions")
-    suspend fun createStreamingChatCompletion(
-        @Body request: ChatCompletionRequest
-    ): Response<ResponseBody>
-
-    // Speech synthesis
-    @POST("v1/audio/speech")
-    @Headers("Content-Type: application/json")
-    suspend fun createSpeechJson(
-        @Body request: SpeechRequest
-    ): Response<ResponseBody>
-
-    @Multipart
-    @POST("v1/audio/transcriptions")
-    suspend fun transcribeAudio(
-        @Part file: MultipartBody.Part,
-        @Part("model") model: RequestBody,
-        @Part("language") language: RequestBody
-    ): Response<TranscriptionResponse>
-
-    @POST("v1/chat/completions")
-    suspend fun chatCompletion(@Body request: ChatRequest): Response<ChatResponse>
-
-    @POST("v1/audio/speech")
-    suspend fun createSpeech(@Body request: SpeechRequest): Response<ResponseBody>
 }

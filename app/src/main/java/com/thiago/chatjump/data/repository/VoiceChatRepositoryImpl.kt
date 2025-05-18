@@ -3,7 +3,7 @@ package com.thiago.chatjump.data.repository
 import android.content.Context
 import android.media.MediaRecorder
 import android.os.Environment
-import com.thiago.chatjump.data.remote.OpenAIClient
+import com.thiago.chatjump.data.remote.OpenAIDataSource
 import com.thiago.chatjump.data.remote.dto.ChatMessageDto
 import com.thiago.chatjump.data.remote.dto.ChatRequest
 import com.thiago.chatjump.data.remote.dto.SpeechRequest
@@ -21,7 +21,7 @@ import javax.inject.Singleton
 
 @Singleton
 class VoiceChatRepositoryImpl @Inject constructor(
-    private val service: OpenAIClient,
+    private val service: OpenAIDataSource,
 ) : VoiceChatRepository {
 
     private var recorder: MediaRecorder? = null
