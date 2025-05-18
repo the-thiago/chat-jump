@@ -11,7 +11,7 @@ interface MessageDao {
     @Query("SELECT * FROM messages WHERE conversationId = :conversationId ORDER BY timestamp ASC")
     fun getMessagesForConversation(conversationId: Int): Flow<List<MessageEntity>>
 
-    @Insert
+    @Insert(onConflict = androidx.room.OnConflictStrategy.REPLACE)
     suspend fun insertMessage(message: MessageEntity)
 
     @Query("DELETE FROM messages WHERE conversationId = :conversationId")

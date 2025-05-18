@@ -21,6 +21,7 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 import android.content.Context
+import android.util.Log
 
 @HiltViewModel
 class ChatViewModel @Inject constructor(
@@ -37,7 +38,7 @@ class ChatViewModel @Inject constructor(
     private val eventChannel = Channel<ChatUiEvent>()
     val events = eventChannel.receiveAsFlow()
 
-    private var messageToSend: ChatMessage? = null
+    private var pendingUserMessage: ChatMessage? = null
 
     private var currentConversationId: Int? = null
     private var newChat = true
@@ -72,7 +73,7 @@ class ChatViewModel @Inject constructor(
                     content = event.text,
                     isUser = true
                 )
-                onSendMessage(userMessage)
+                handleSend(userMessage)
             }
             is ChatEvent.OnPlayResponse -> {
                 if (event.messageId == state.value.speakingMessageId) {
@@ -89,7 +90,10 @@ class ChatViewModel @Inject constructor(
                     _state.update { it.copy(error = "No internet connection", canRetry = false) }
                     return
                 }
-                messageToSend?.let { onSendMessage(it) }
+                pendingUserMessage?.let {
+                    createConversationTitle(it)
+                    getAIResponse()
+                }
             }
             ChatEvent.OnDismissError -> {
                 _state.update { it.copy(error = null, canRetry = false) }
@@ -97,8 +101,8 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun onSendMessage(userMessage: ChatMessage) {
-        messageToSend = userMessage
+    private fun handleSend(userMessage: ChatMessage) {
+        pendingUserMessage = userMessage
         viewModelScope.launch {
             _state.update { currentState ->
                 currentState.copy(
@@ -119,7 +123,6 @@ class ChatViewModel @Inject constructor(
 
         createConversationTitle(userMessage)
         getAIResponse()
-        messageToSend == null
     }
 
     override fun onCleared() {
@@ -197,17 +200,18 @@ class ChatViewModel @Inject constructor(
                 eventChannel.send(ChatUiEvent.ScrollToBottom)
 
                 currentConversationId?.let { conversationId ->
-                    // Persist AI message only once (user message was already saved)
                     chatRepository.saveMessage(conversationId, aiMessage)
                 }
+
+                pendingUserMessage = null
             } catch (e: Exception) {
-                println("thiago e $e")
+                Log.e("ChatViewModel", "Error getting AI response: ${e.message}")
                 _state.update {
                     it.copy(
                         isThinking = false,
                         currentStreamingMessage = "",
-                        error = "Failed to fetch response. Please try again.",
-                        canRetry = true
+                        error = "Failed to response. Please try again.",
+                        canRetry = true,
                     )
                 }
             }
@@ -225,10 +229,10 @@ class ChatViewModel @Inject constructor(
                         currentConversationId?.let { conversationId ->
                             chatRepository.saveMessage(conversationId, userMessage)
                         }
+                        newChat = false
                     }
-                    newChat = false
                 } catch (e: Exception) {
-                    println("Error generating title: ${e.message}")
+                    Log.e("ChatViewModel", "Error generating title: ${e.message}")
                 }
             }
         }

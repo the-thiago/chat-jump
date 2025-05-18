@@ -13,6 +13,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class OpenAIClient @Inject constructor(
@@ -33,7 +34,7 @@ class OpenAIClient @Inject constructor(
     suspend fun getStreamingChatCompletion(
         messages: List<ChatCompletionMessage>
     ): Flow<String> = flow {
-        println("Starting streaming chat completion...")
+        Log.i("OpenAIClient", "Starting streaming chat completion...")
         try {
             val response = api.createStreamingChatCompletion(
                 request = ChatCompletionRequest(
@@ -57,12 +58,12 @@ class OpenAIClient @Inject constructor(
                                 .replace("\\r", "\r")
                             emit(content)
                         } catch (e: Exception) {
-                            println("Error parsing streaming response: ${e.message}")
+                            Log.e("OpenAIClient", "Error parsing streaming response: ${e.message}")
                         }
                     }
             }
         } catch (e: Exception) {
-            println("Error in getStreamingChatCompletion: ${e.message}")
+            Log.e("OpenAIClient", "Error in getStreamingChatCompletion: ${e.message}")
             e.printStackTrace()
             throw e
         }

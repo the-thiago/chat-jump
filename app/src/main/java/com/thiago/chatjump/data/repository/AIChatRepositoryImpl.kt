@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 import javax.inject.Singleton
+import android.util.Log
 
 @Singleton
 class AIChatRepositoryImpl @Inject constructor(
@@ -16,7 +17,7 @@ class AIChatRepositoryImpl @Inject constructor(
 ) : AIChatRepository {
     override suspend fun getResponse(message: ChatMessage): Flow<String> = flow {
         try {
-            println("Starting getResponse")
+            Log.i("AIChatRepo", "Starting getResponse")
             val response = openAIClient.getChatCompletion(
                 messages = listOf(
                     ChatCompletionMessage(
@@ -27,7 +28,7 @@ class AIChatRepositoryImpl @Inject constructor(
             )
             emit(response.choices.firstOrNull()?.message?.content ?: "")
         } catch (e: Exception) {
-            println("Error in getAIResponse: ${e.message}")
+            Log.e("AIChatRepo", "Error in getResponse: ${e.message}")
             e.printStackTrace()
             throw e
         }
@@ -35,7 +36,7 @@ class AIChatRepositoryImpl @Inject constructor(
 
     override suspend fun getAIResponse(messages: List<ChatMessage>): Flow<String> = flow {
         try {
-            println("Starting AI response collection...")
+            Log.i("AIChatRepo", "Starting AI response collection...")
             openAIClient.getStreamingChatCompletion(
                 messages = messages.map { message ->
                     ChatCompletionMessage(
@@ -44,13 +45,13 @@ class AIChatRepositoryImpl @Inject constructor(
                     )
                 }
             ).collect { content ->
-                println("Received content: $content")
+                Log.i("AIChatRepo", "Received content chunk")
                 // Add a small delay between emissions for smoother streaming
                 delay(50)
                 emit(content)
             }
         } catch (e: Exception) {
-            println("Error in getAIResponse: ${e.message}")
+            Log.e("AIChatRepo", "Error in getAIResponse: ${e.message}")
             e.printStackTrace()
             throw e
         }
