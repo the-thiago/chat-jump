@@ -31,7 +31,7 @@ class TextToSpeechRepositoryImpl @Inject constructor(
     private val openAIClient: OpenAIClient
 ) : TextToSpeechRepository {
 
-    private val scope = CoroutineScope(Dispatchers.IO + Job())
+    private var scope: CoroutineScope? = CoroutineScope(Dispatchers.IO + Job())
     private var mediaPlayer: MediaPlayer? = null
 
     private val _isSpeaking = MutableStateFlow(false)
@@ -50,7 +50,10 @@ class TextToSpeechRepositoryImpl @Inject constructor(
             .replace(Regex("```.*?```"), "")
             .trim()
 
-        scope.launch {
+        if (scope == null) {
+            scope = CoroutineScope(Dispatchers.IO + Job())
+        }
+        scope?.launch {
             try {
                 _isSpeaking.value = true
                 val cacheFile = getCacheFileForText(cleanText)
@@ -102,6 +105,7 @@ class TextToSpeechRepositoryImpl @Inject constructor(
     override fun stop() {
         try {
             mediaPlayer?.stop()
+            mediaPlayer?.release()
         } catch (_: Exception) {
             Log.e("OpenAITTS", "Failed to stop playback")
         }
@@ -111,7 +115,8 @@ class TextToSpeechRepositoryImpl @Inject constructor(
 
     override fun shutdown() {
         stop()
-        scope.cancel()
+        scope?.cancel()
+        scope = null
     }
 
     private fun getCacheFileForText(text: String): File {
