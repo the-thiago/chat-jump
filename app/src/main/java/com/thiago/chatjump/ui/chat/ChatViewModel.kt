@@ -98,6 +98,7 @@ class ChatViewModel @Inject constructor(
                 // Get AI response
                 viewModelScope.launch {
                     try {
+                        delay(300L) // Just to see the thinking bubble
                         var accumulatedResponse = ""
                         
                         getAIResponseUseCase(_state.value.messages).collect { response ->
