@@ -49,7 +49,11 @@ class OpenAIClient @Inject constructor(
                     .filter { it != "[DONE]" }
                     .forEach { json ->
                         try {
-                            val content = json.split("\"content\":\"")[1].split("\"")[0]
+                            val rawContent = json.split("\"content\":\"")[1].split("\"")[0]
+                            // Replace escaped newline sequences with real newline characters so MarkdownText can render correctly
+                            val content = rawContent
+                                .replace("\\n", "\n")
+                                .replace("\\r", "\r")
                             emit(content)
                         } catch (e: Exception) {
                             println("Error parsing streaming response: ${e.message}")
