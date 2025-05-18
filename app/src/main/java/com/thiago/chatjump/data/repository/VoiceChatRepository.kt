@@ -61,7 +61,7 @@ class VoiceChatRepositoryImpl @Inject constructor(
      * Pipeline: audio file -> transcription -> chat -> speech audio file path
      * Returns Triple<userText, aiText, aiAudioFilePath>
      */
-    override suspend fun processUserAudio(context: Context, audioFile: File): Triple<String, String, String?> {
+    override suspend fun processUserAudio(context: Context, audioFile: File): Pair<String, String?> {
         return withContext(Dispatchers.IO) {
             // 1. Transcribe user audio (Whisper)
             val transcription = transcribe(audioFile)
@@ -69,7 +69,7 @@ class VoiceChatRepositoryImpl @Inject constructor(
             val aiText = chat(transcription)
             // 3. Convert AI text to speech
             val audioPath = textToSpeech(context, aiText)
-            Triple(transcription, aiText, audioPath)
+            Pair(transcription, audioPath)
         }
     }
 

@@ -66,14 +66,11 @@ class VoiceChatViewModel @Inject constructor(
 
                 if (audioFile != null && spokeEnough) {
                     // 2. Send to OpenAI (transcribe, chat, tts)
-                    val (userText, aiText, aiAudio) = repository.processUserAudio(context, audioFile)
+                    val (userText, aiAudio) = repository.processUserAudio(context, audioFile)
 
                     // Skip if transcription is blank (failsafe)
                     if (userText.isNotBlank()) {
-                        addMessage(userText, Sender.USER)
-                        addMessage(aiText, Sender.AI)
-
-                        // 3. Speak
+                        // 3. Speak AI response
                         aiAudio?.let { playAudio(it) }
                     }
                 } else {
@@ -84,10 +81,6 @@ class VoiceChatViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isThinking = false)
             }
         }
-    }
-
-    private fun addMessage(text: String, sender: Sender) {
-        _uiState.value = _uiState.value.copy(messages = listOf(ChatMessage(text, sender)) + _uiState.value.messages)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
