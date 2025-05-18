@@ -39,7 +39,9 @@ class ChatViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             textToSpeechManager.isSpeaking.collect { isSpeaking ->
-                _state.update { it.copy(isSpeaking = isSpeaking) }
+                if (!isSpeaking) {
+                    _state.update { it.copy(speakingMessageId = null) }
+                }
             }
         }
     }

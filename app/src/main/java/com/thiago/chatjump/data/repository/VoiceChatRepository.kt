@@ -7,6 +7,7 @@ import com.thiago.chatjump.data.remote.ChatMessageDto
 import com.thiago.chatjump.data.remote.ChatRequest
 import com.thiago.chatjump.data.remote.OpenAIClient
 import com.thiago.chatjump.data.remote.SpeechRequest
+import com.thiago.chatjump.domain.repository.VoiceChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -17,14 +18,14 @@ import java.io.File
 import java.util.UUID
 import javax.inject.Inject
 
-class VoiceChatRepository @Inject constructor(
+class VoiceChatRepositoryImpl @Inject constructor(
     private val service: OpenAIClient,
-) {
+) : VoiceChatRepository {
 
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
 
-    fun startRecording(context: Context) {
+    override fun startRecording(context: Context) {
         val dir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC) ?: context.cacheDir
         if (!dir.exists()) dir.mkdirs()
         outputFile = File(dir, "record_${System.currentTimeMillis()}.m4a")
@@ -39,7 +40,7 @@ class VoiceChatRepository @Inject constructor(
         }
     }
 
-    fun stopRecording(): File? {
+    override fun stopRecording(): File? {
         return try {
             recorder?.apply {
                 stop()
@@ -57,7 +58,7 @@ class VoiceChatRepository @Inject constructor(
      * Pipeline: audio file -> transcription -> chat -> speech audio file path
      * Returns Triple<userText, aiText, aiAudioFilePath>
      */
-    suspend fun processUserAudio(context: Context, audioFile: File): Triple<String, String, String?> {
+    override suspend fun processUserAudio(context: Context, audioFile: File): Triple<String, String, String?> {
         return withContext(Dispatchers.IO) {
             // 1. Transcribe user audio (Whisper)
             val transcription = transcribe(audioFile)
@@ -103,5 +104,5 @@ class VoiceChatRepository @Inject constructor(
         return audioFile.absolutePath
     }
 
-    fun currentAmplitude(): Int = recorder?.maxAmplitude ?: 0
+    override fun currentAmplitude(): Int = recorder?.maxAmplitude ?: 0
 } 

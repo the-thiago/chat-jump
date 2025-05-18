@@ -4,8 +4,9 @@ import android.content.Context
 import android.media.MediaPlayer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.thiago.chatjump.data.repository.VoiceChatRepository
+import com.thiago.chatjump.domain.repository.VoiceChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,8 +21,8 @@ class VoiceChatViewModel @Inject constructor(
     private val repository: VoiceChatRepository,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(VoiceChatUiState())
-    val uiState: StateFlow<VoiceChatUiState> = _uiState
+    private val _uiState = MutableStateFlow(VoiceChatState())
+    val uiState: StateFlow<VoiceChatState> = _uiState
 
     private var loopJob: Job? = null
     private val SILENCE_THRESHOLD = 2000 // amplitude
@@ -73,7 +74,7 @@ class VoiceChatViewModel @Inject constructor(
                         addMessage(aiText, Sender.AI)
 
                         // 3. Speak
-                        aiAudio?.let { playAudioSuspending(context, it) }
+                        aiAudio?.let { playAudio(it) }
                     }
                 } else {
                     // Not enough speech; ignore this recording
@@ -89,7 +90,8 @@ class VoiceChatViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(messages = listOf(ChatMessage(text, sender)) + _uiState.value.messages)
     }
 
-    private suspend fun playAudioSuspending(context: Context, filePath: String) {
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private suspend fun playAudio(filePath: String) {
         return suspendCancellableCoroutine { cont ->
             try {
                 val player = MediaPlayer().apply {
@@ -131,16 +133,3 @@ class VoiceChatViewModel @Inject constructor(
         }
     }
 }
-
-data class VoiceChatUiState(
-    val isRecording: Boolean = false,
-    val isThinking: Boolean = false,
-    val isAiSpeaking: Boolean = false,
-    val aiAmplitude: Float = 0f,
-    val userAmplitude: Float = 0f,
-    val messages: List<ChatMessage> = emptyList()
-)
-
-data class ChatMessage(val text: String, val sender: Sender)
-
-enum class Sender { USER, AI } 

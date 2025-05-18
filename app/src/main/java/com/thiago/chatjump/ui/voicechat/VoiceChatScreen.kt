@@ -123,7 +123,7 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
 }
 
 @Composable
-private fun VisualizerScreen(uiState: VoiceChatUiState) {
+private fun VisualizerScreen(uiState: VoiceChatState) {
     // Smooth transition factor: 0f (user/yarn) -> 1f (AI/wave)
     val progress by animateFloatAsState(
         targetValue = if (uiState.isAiSpeaking) 1f else 0f,

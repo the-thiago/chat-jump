@@ -143,7 +143,7 @@ fun ChatScreen(
                             message = message,
                             onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
                             onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content, message.id)) },
-                            isSpeaking = state.speakingMessageId == message.id && state.isSpeaking
+                            isSpeaking = state.speakingMessageId == message.id
                         )
                     }
                 }
