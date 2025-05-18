@@ -143,22 +143,17 @@ class ChatViewModel @Inject constructor(
         
         viewModelScope.launch {
             _state.update { it.copy(isThinking = true) }
-            try {
-                // Load messages from database
-                chatRepository.getMessagesForConversation(conversationId).collect { messages ->
-                    _state.update { 
-                        it.copy(
-                            messages = messages,
-                            isThinking = false
-                        )
-                    }
-                    // Add a small delay to ensure the UI is ready
-                    delay(100)
-                    eventChannel.send(ChatUiEvent.ScrollToBottom)
+            // Load messages from database
+            chatRepository.getMessagesForConversation(conversationId).collect { messages ->
+                _state.update {
+                    it.copy(
+                        messages = messages,
+                        isThinking = false
+                    )
                 }
-            } catch (e: Exception) {
-                // TODO: Handle error
-                _state.update { it.copy(isThinking = false) }
+                // Add a small delay to ensure the UI is ready
+                delay(100)
+                eventChannel.send(ChatUiEvent.ScrollToBottom)
             }
         }
     }
@@ -168,7 +163,7 @@ class ChatViewModel @Inject constructor(
             _state.update { it.copy(isThinking = true, error = null, canRetry = false) }
             try {
                 eventChannel.send(ChatUiEvent.ScrollToBottom)
-                delay(300L)
+                delay(300L) // To Show the thinking bubble
 
                 var accumulatedResponse = ""
 
