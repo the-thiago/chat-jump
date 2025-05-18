@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.thiago.chatjump.ui.chat.ChatScreen
 import com.thiago.chatjump.ui.conversations.ConversationHistoryScreen
 import com.thiago.chatjump.ui.voicechat.VoiceChatScreen
@@ -19,7 +20,7 @@ fun ChatNavigation(
         composable(
             route = Screen.Chat.route,
             arguments = listOf(
-                androidx.navigation.navArgument("conversationId") {
+                navArgument("conversationId") {
                     type = androidx.navigation.NavType.IntType
                 }
             )

@@ -20,12 +20,12 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             ChatJumpTheme {
                 val backgroundColor = MaterialTheme.colorScheme.background
-                // Update system bar colors to match theme
                 SideEffect {
                     window.statusBarColor = backgroundColor.toArgb()
                     val isLight = backgroundColor.luminance() > 0.5f
