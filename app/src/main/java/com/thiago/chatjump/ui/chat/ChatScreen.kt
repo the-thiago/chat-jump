@@ -134,8 +134,7 @@ fun ChatScreen(
                     if (state.currentStreamingMessage.isNotEmpty()) {
                         item {
                             StreamingMessageBubble(
-                                text = state.currentStreamingMessage,
-                                modifier = Modifier.animateContentSize()
+                                text = state.currentStreamingMessage
                             )
                         }
                     }

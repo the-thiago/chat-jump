@@ -25,6 +25,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.thiago.chatjump.domain.model.ChatMessage
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.animation.core.Animatable
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.ui.unit.sp
 
 @Composable
 fun ThinkingBubble() {
@@ -131,41 +142,72 @@ fun MessageBubble(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun StreamingMessageBubble(
     text: String,
     modifier: Modifier = Modifier
 ) {
-    val infiniteTransition = rememberInfiniteTransition(label = "streaming")
-    val alpha by infiniteTransition.animateFloat(
+    // Pulse background as before
+    val bgTransition = rememberInfiniteTransition(label = "streaming_bg")
+    val bgAlpha by bgTransition.animateFloat(
         initialValue = 0.6f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(300, easing = LinearEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "streaming_alpha"
+        label = "streaming_bg_alpha"
     )
+
+    // State to track words and animate the newly completed word
+    val words = remember { mutableStateListOf<String>() }
+
+    // Alpha that will be applied only to the last (newly added) word
+    val lastWordAlpha = remember { Animatable(1f) }
+
+    LaunchedEffect(text) {
+        // Split by whitespace to get completed words ("word1 word2 ...")
+        val parts = text.trim().split(" ")
+
+        // If size increased, a new word finished streaming
+        if (parts.size > words.size) {
+            val newWords = parts.drop(words.size)
+            words.addAll(newWords)
+
+            // Animate the fade-in of the last completed word
+            lastWordAlpha.snapTo(0f)
+            lastWordAlpha.animateTo(1f, animationSpec = tween(durationMillis = 150))
+        } else {
+            // Update the last (in-progress) word without triggering animation
+            // This covers the scenario where the current word is still streaming
+            if (words.isNotEmpty()) {
+                words[words.lastIndex] = parts.last()
+            } else if (parts.isNotEmpty()) {
+                words.add(parts.last())
+            }
+        }
+    }
 
     Box(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
-            .clip(
-                RoundedCornerShape(
-                    topStart = 16.dp,
-                    topEnd = 16.dp,
-                    bottomStart = 16.dp,
-                    bottomEnd = 16.dp
-                )
-            )
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = alpha))
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = bgAlpha))
             .padding(16.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodyLarge,
-            color = MaterialTheme.colorScheme.onPrimary
-        )
+        FlowRow {
+            words.forEachIndexed { index, word ->
+                val alpha = if (index == words.lastIndex) lastWordAlpha.value else 1f
+
+                Text(
+                    text = "$word ",
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 16.sp,
+                    modifier = Modifier.graphicsLayer { this.alpha = alpha }
+                )
+            }
+        }
     }
 } 
