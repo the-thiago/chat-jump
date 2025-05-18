@@ -25,6 +25,9 @@ class VoiceChatRepositoryImpl @Inject constructor(
     private var recorder: MediaRecorder? = null
     private var outputFile: File? = null
 
+    // Maintain conversation context during the application lifecycle
+    private val conversationHistory = mutableListOf<ChatMessageDto>()
+
     override fun startRecording(context: Context) {
         val dir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC) ?: context.cacheDir
         if (!dir.exists()) dir.mkdirs()
@@ -81,14 +84,23 @@ class VoiceChatRepositoryImpl @Inject constructor(
     }
 
     private suspend fun chat(userText: String): String {
-        val response = service.chatCompletion(ChatRequest(messages = listOf(
-            ChatMessageDto(
-                "user",
-                userText
+        // Append the new user message to the running history
+        conversationHistory.add(ChatMessageDto("user", userText))
+
+        val response = service.chatCompletion(
+            ChatRequest(
+                messages = conversationHistory
             )
         )
-        ))
-        return response.body()?.choices?.firstOrNull()?.message?.content ?: ""
+
+        val aiText = response.body()?.choices?.firstOrNull()?.message?.content ?: ""
+
+        // Append assistant reply to history for future context
+        if (aiText.isNotBlank()) {
+            conversationHistory.add(ChatMessageDto("assistant", aiText))
+        }
+
+        return aiText
     }
 
     private suspend fun textToSpeech(context: Context, text: String): String? {
