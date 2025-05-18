@@ -102,8 +102,9 @@ class TextToSpeechRepositoryImpl @Inject constructor(
     override fun stop() {
         try {
             mediaPlayer?.stop()
-            mediaPlayer?.release()
-        } catch (_: Exception) {}
+        } catch (_: Exception) {
+            Log.e("OpenAITTS", "Failed to stop playback")
+        }
         mediaPlayer = null
         _isSpeaking.value = false
     }
