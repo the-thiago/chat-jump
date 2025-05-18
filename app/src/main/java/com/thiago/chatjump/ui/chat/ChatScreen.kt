@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Waves
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -178,7 +179,7 @@ fun ChatScreen(
                             enabled = state.inputText.isNotBlank() && !state.isThinking
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Send,
+                                imageVector = Icons.AutoMirrored.Filled.Send,
                                 contentDescription = "Send",
                                 tint = if (state.inputText.isNotBlank() && !state.isThinking)
                                     MaterialTheme.colorScheme.primary
