@@ -25,6 +25,10 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -33,6 +37,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +49,8 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.thiago.chatjump.ui.voicechat.components.WaveformVisualizer
 import com.thiago.chatjump.ui.voicechat.components.YarnBallVisualizer
+import com.thiago.chatjump.util.ObserveAsEvents
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -51,6 +58,34 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     val context = LocalContext.current
     val activity = context as? Activity
     val uiState by viewModel.uiState.collectAsState()
+
+    val snackbarHostState = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+
+    val coroutineScope = rememberCoroutineScope()
+    ObserveAsEvents(
+        flow = viewModel.events,
+    ) { event ->
+        coroutineScope.launch {
+            when (event) {
+                VoiceChatUiEvent.BackOnline -> snackbarHostState.showSnackbar("Back online, try again!")
+                VoiceChatUiEvent.UnexpectedError -> snackbarHostState.showSnackbar("Unexpected error, try speaking again!")
+            }
+        }
+    }
+
+    LaunchedEffect(uiState.isOffline) {
+        if (uiState.isOffline) {
+            scope.launch {
+                snackbarHostState.showSnackbar(
+                    message = "No internet connection",
+                    duration = SnackbarDuration.Indefinite
+                )
+            }
+        } else {
+            snackbarHostState.currentSnackbarData?.dismiss()
+        }
+    }
 
     // Permission state holders
     var hasMicPermission by remember {
@@ -91,30 +126,32 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     }
 
     // UI
-    when {
-        showRationale -> {
-            // Show rationale dialog explaining why we need the permission
-            PermissionRationaleDialog(
-                onDismiss = { showRationale = false },
-                onConfirm = {
-                    showRationale = false
-                    permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+    Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+        Box(modifier = Modifier.padding(padding)) {
+            when {
+                showRationale -> {
+                    PermissionRationaleDialog(
+                        onDismiss = { showRationale = false },
+                        onConfirm = {
+                            showRationale = false
+                            permissionLauncher.launch(Manifest.permission.RECORD_AUDIO)
+                        }
+                    )
                 }
-            )
-        }
-        permanentlyDenied -> {
-            // Ask user to enable permission from settings
-            PermissionPermanentlyDeniedScreen(onOpenSettings = {
-                val intent = Intent(
-                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                    Uri.fromParts("package", context.packageName, null)
-                )
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                context.startActivity(intent)
-            })
-        }
-        else -> {
-            VisualizerScreen(uiState)
+                permanentlyDenied -> {
+                    PermissionPermanentlyDeniedScreen(onOpenSettings = {
+                        val intent = Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                            Uri.fromParts("package", context.packageName, null)
+                        )
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(intent)
+                    })
+                }
+                else -> {
+                    VisualizerScreen(uiState)
+                }
+            }
         }
     }
 }

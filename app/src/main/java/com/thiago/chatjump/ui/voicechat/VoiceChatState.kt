@@ -6,4 +6,5 @@ data class VoiceChatState(
     val isAiSpeaking: Boolean = false,
     val aiAmplitude: Float = 0f,
     val userAmplitude: Float = 0f,
+    val isOffline: Boolean = false,
 )

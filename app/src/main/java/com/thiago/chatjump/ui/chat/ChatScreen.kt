@@ -42,17 +42,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.thiago.chatjump.R
 import com.thiago.chatjump.ui.chat.components.MessageBubble
 import com.thiago.chatjump.ui.chat.components.StreamingMessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import com.thiago.chatjump.util.ObserveAsEvents
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -217,21 +212,6 @@ fun ChatScreen(
                 viewModel.onEvent(ChatEvent.OnRetry)
             }
             viewModel.onEvent(ChatEvent.OnDismissError)
-        }
-    }
-}
-
-@Composable
-private fun <T> ObserveAsEvents(
-    flow: Flow<T>,
-    onEvent: (T) -> Unit
-) {
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(flow, lifecycleOwner.lifecycle) {
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-            withContext(Dispatchers.Main.immediate) {
-                flow.collect(onEvent)
-            }
         }
     }
 }
