@@ -127,19 +127,40 @@ fun MessageBubble(
 }
 
 @Composable
-fun SendButton(
-    onClick: () -> Unit,
-    enabled: Boolean
+fun StreamingMessageBubble(
+    text: String,
+    modifier: Modifier = Modifier
 ) {
-    IconButton(
-        onClick = onClick,
-        enabled = enabled
+    val infiniteTransition = rememberInfiniteTransition(label = "streaming")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.6f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(300, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "streaming_alpha"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .clip(
+                RoundedCornerShape(
+                    topStart = 16.dp,
+                    topEnd = 16.dp,
+                    bottomStart = 16.dp,
+                    bottomEnd = 16.dp
+                )
+            )
+            .background(MaterialTheme.colorScheme.primary.copy(alpha = alpha))
+            .padding(16.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.Send,
-            contentDescription = "Send",
-            tint = if (enabled) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onPrimary
         )
     }
 } 

@@ -1,6 +1,7 @@
 package com.thiago.chatjump.ui.chat
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.fadeIn
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -46,6 +47,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.thiago.chatjump.R
 import com.thiago.chatjump.ui.chat.components.MessageBubble
+import com.thiago.chatjump.ui.chat.components.StreamingMessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -131,34 +133,10 @@ fun ChatScreen(
                     // Show streaming message
                     if (state.currentStreamingMessage.isNotEmpty()) {
                         this.item {
-                            AnimatedVisibility(
-                                visible = true,
-                                enter = fadeIn()
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                                        .clip(
-                                            RoundedCornerShape(
-                                                topStart = 16.dp,
-                                                topEnd = 16.dp,
-                                                bottomStart = 16.dp,
-                                                bottomEnd = 16.dp
-                                            )
-                                        )
-                                        .background(
-                                             MaterialTheme.colorScheme.primary
-                                        )
-                                        .padding(16.dp)
-                                ) {
-                                    Text(
-                                        text = state.currentStreamingMessage,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                }
-                            }
+                            StreamingMessageBubble(
+                                text = state.currentStreamingMessage,
+                                modifier = Modifier.animateContentSize()
+                            )
                         }
                     }
                 }
