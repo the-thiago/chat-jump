@@ -235,7 +235,7 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 isThinking = false,
                 currentStreamingMessage = "",
-                error = "Failed to respond. Please try again.",
+                error = "Failed to respond.",
                 canRetry = true,
             )
         }
