@@ -45,11 +45,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.thiago.chatjump.R
 import com.thiago.chatjump.ui.voicechat.components.WaveformVisualizer
 import com.thiago.chatjump.ui.voicechat.components.YarnBallVisualizer
 import com.thiago.chatjump.util.ObserveAsEvents
@@ -66,13 +68,18 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     val scope = rememberCoroutineScope()
 
     val coroutineScope = rememberCoroutineScope()
+
+    val snackbarBackOnlineMessage = stringResource(R.string.voice_chat_snackbar_back_online)
+    val snackbarUnexpectedErrorMessage = stringResource(R.string.voice_chat_snackbar_unexpected_error)
+    val snackbarOfflineMessage = stringResource(R.string.voice_chat_snackbar_offline)
+
     ObserveAsEvents(
         flow = viewModel.events,
     ) { event ->
         coroutineScope.launch {
             when (event) {
-                VoiceChatUiEvent.BackOnline -> snackbarHostState.showSnackbar("Back online, try again!")
-                VoiceChatUiEvent.UnexpectedError -> snackbarHostState.showSnackbar("Unexpected error, try speaking again!")
+                VoiceChatUiEvent.BackOnline -> snackbarHostState.showSnackbar(message = snackbarBackOnlineMessage)
+                VoiceChatUiEvent.UnexpectedError -> snackbarHostState.showSnackbar(message = snackbarUnexpectedErrorMessage)
             }
         }
     }
@@ -81,7 +88,7 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
         if (uiState.isOffline) {
             scope.launch {
                 snackbarHostState.showSnackbar(
-                    message = "No internet connection",
+                    message = snackbarOfflineMessage,
                     duration = SnackbarDuration.Indefinite
                 )
             }
@@ -249,18 +256,18 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
 private fun PermissionRationaleDialog(onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Microphone Permission Required") },
+        title = { Text(stringResource(R.string.voice_chat_permission_rationale_title)) },
         text = {
-            Text("RealChat requires access to your microphone so you can speak to the AI assistant. Without this permission, the app won't be able to hear you.")
+            Text(stringResource(R.string.voice_chat_permission_rationale_message))
         },
         confirmButton = {
             TextButton(onClick = onConfirm) {
-                Text("Continue")
+                Text(stringResource(R.string.voice_chat_permission_rationale_confirm_button))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.voice_chat_permission_rationale_dismiss_button))
             }
         }
     )
@@ -275,10 +282,10 @@ private fun PermissionPermanentlyDeniedScreen(onOpenSettings: () -> Unit) {
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Microphone permission has been permanently denied. Please enable it in app settings to continue.")
+        Text(stringResource(R.string.voice_chat_permission_denied_message))
         Spacer(modifier = Modifier.height(16.dp))
         Button(onClick = onOpenSettings) {
-            Text("Open Settings")
+            Text(stringResource(R.string.voice_chat_permission_denied_open_settings_button))
         }
     }
 } 

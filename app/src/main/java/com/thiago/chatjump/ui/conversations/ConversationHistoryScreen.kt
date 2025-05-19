@@ -33,8 +33,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.thiago.chatjump.R
 import com.thiago.chatjump.domain.model.ConversationItem
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -54,15 +56,15 @@ fun ConversationHistoryScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Chat History") },
+                title = { Text(stringResource(R.string.conversation_history_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.conversation_history_screen_back_icon_description))
                     }
                 },
                 actions = {
                     IconButton(onClick = onNewConversationClick) {
-                        Icon(Icons.Default.ModeEdit, "New Conversation")
+                        Icon(Icons.Default.ModeEdit, stringResource(R.string.conversation_history_screen_new_conversation_icon_description))
                     }
                 }
             )
@@ -80,12 +82,12 @@ fun ConversationHistoryScreen(
                     TextField(
                         value = state.searchQuery,
                         onValueChange = { viewModel.onEvent(ConversationHistoryEvent.OnSearchQueryChange(it)) },
-                        placeholder = { Text("Search conversations") },
-                        leadingIcon = { Icon(Icons.Default.Search, "Search") },
+                        placeholder = { Text(stringResource(R.string.conversation_history_screen_search_placeholder)) },
+                        leadingIcon = { Icon(Icons.Default.Search, stringResource(R.string.conversation_history_screen_search_icon_description)) },
                         trailingIcon = {
                             if (state.searchQuery.isNotEmpty()) {
                                 IconButton(onClick = { viewModel.onEvent(ConversationHistoryEvent.OnSearchQueryChange("")) }) {
-                                    Icon(Icons.Default.Clear, "Clear search")
+                                    Icon(Icons.Default.Clear, stringResource(R.string.conversation_history_screen_clear_search_icon_description))
                                 }
                             }
                         },
@@ -114,7 +116,7 @@ fun ConversationHistoryScreen(
                     }
                     state.conversations.isEmpty() && state.searchQuery.isNotBlank() -> {
                         Text(
-                            text = "No conversation found",
+                            text = stringResource(R.string.conversation_history_screen_no_results_message),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             modifier = Modifier.align(Alignment.Center)
@@ -122,7 +124,7 @@ fun ConversationHistoryScreen(
                     }
                     state.conversations.isEmpty() -> {
                         Text(
-                            text = "Click the pencil icon\nto start a new conversation!",
+                            text = stringResource(R.string.conversation_history_screen_empty_state_message),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
                             modifier = Modifier.align(Alignment.Center),

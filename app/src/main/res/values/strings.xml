@@ -1,3 +1,32 @@
 <resources>
     <string name="app_name">ChatJump</string>
+    <string name="chat_screen_title">Chat</string>
+    <string name="chat_screen_conversation_history_icon_description">Conversation History</string>
+    <string name="chat_screen_input_placeholder">Ask anything</string>
+    <string name="chat_screen_send_icon_description">Send</string>
+    <string name="chat_screen_real_time_icon_description">Real Time</string>
+    <string name="chat_screen_empty_state_message">What can I help with?</string>
+    <string name="chat_screen_retry_button">Retry</string>
+    <string name="chat_screen_dismiss_error_icon_description">Dismiss Error</string>
+    <string name="chat_component_thinking_bubble_text">Thinking…</string>
+    <string name="chat_component_message_bubble_copy_icon_description">Copy</string>
+    <string name="chat_component_message_bubble_stop_icon_description">Stop</string>
+    <string name="chat_component_message_bubble_play_icon_description">Play</string>
+    <string name="conversation_history_screen_title">Chat History</string>
+    <string name="conversation_history_screen_back_icon_description">Back</string>
+    <string name="conversation_history_screen_new_conversation_icon_description">New Conversation</string>
+    <string name="conversation_history_screen_search_placeholder">Search conversations</string>
+    <string name="conversation_history_screen_search_icon_description">Search</string>
+    <string name="conversation_history_screen_clear_search_icon_description">Clear search</string>
+    <string name="conversation_history_screen_no_results_message">No conversation found</string>
+    <string name="conversation_history_screen_empty_state_message">Click the pencil icon\nto start a new conversation!</string>
+    <string name="voice_chat_snackbar_back_online">Back online, try again!</string>
+    <string name="voice_chat_snackbar_unexpected_error">Unexpected error, try speaking again!</string>
+    <string name="voice_chat_snackbar_offline">No internet connection</string>
+    <string name="voice_chat_permission_rationale_title">Microphone Permission Required</string>
+    <string name="voice_chat_permission_rationale_message">RealChat requires access to your microphone so you can speak to the AI assistant. Without this permission, the app won\'t be able to hear you.</string>
+    <string name="voice_chat_permission_rationale_confirm_button">Continue</string>
+    <string name="voice_chat_permission_rationale_dismiss_button">Cancel</string>
+    <string name="voice_chat_permission_denied_message">Microphone permission has been permanently denied. Please enable it in app settings to continue.</string>
+    <string name="voice_chat_permission_denied_open_settings_button">Open Settings</string>
 </resources>

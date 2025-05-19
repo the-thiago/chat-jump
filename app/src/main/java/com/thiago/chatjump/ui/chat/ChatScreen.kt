@@ -43,6 +43,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -107,10 +108,10 @@ fun ChatScreen(
         modifier = Modifier.windowInsetsPadding(WindowInsets.ime),
         topBar = {
             TopAppBar(
-                title = { Text("Chat") },
+                title = { Text(stringResource(R.string.chat_screen_title)) },
                 navigationIcon = {
                     IconButton(onClick = onConversationHistoryClick) {
-                        Icon(Icons.AutoMirrored.Filled.List, "Conversation History")
+                        Icon(Icons.AutoMirrored.Filled.List, stringResource(R.string.chat_screen_conversation_history_icon_description))
                     }
                 }
             )
@@ -131,7 +132,7 @@ fun ChatScreen(
                         value = state.inputText,
                         onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
                         modifier = Modifier.weight(1f),
-                        placeholder = { Text("Ask anything") },
+                        placeholder = { Text(stringResource(R.string.chat_screen_input_placeholder)) },
                         maxLines = 10,
                         shape = RoundedCornerShape(16.dp)
                     )
@@ -146,7 +147,7 @@ fun ChatScreen(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Send",
+                            contentDescription = stringResource(R.string.chat_screen_send_icon_description),
                             tint = if (enabled)
                                 MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
@@ -159,7 +160,7 @@ fun ChatScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.sound_wave),
-                            contentDescription = "Real Time",
+                            contentDescription = stringResource(R.string.chat_screen_real_time_icon_description),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
@@ -184,7 +185,7 @@ fun ChatScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "What can I help with?",
+                            text = stringResource(R.string.chat_screen_empty_state_message),
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
                         )
@@ -219,14 +220,14 @@ fun ChatScreen(
                                     Button(onClick = {
                                         viewModel.onEvent(ChatEvent.OnRetry)
                                     }) {
-                                        Text("Retry")
+                                        Text(stringResource(R.string.chat_screen_retry_button))
                                     }
                                 } else {
                                     Spacer(modifier = Modifier.width(8.dp))
                                     IconButton(onClick = { viewModel.onEvent(ChatEvent.OnDismissError) }) {
                                         Icon(
                                             imageVector = Icons.Filled.Close,
-                                            contentDescription = "Dismiss Error",
+                                            contentDescription = stringResource(R.string.chat_screen_dismiss_error_icon_description),
                                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
                                     }

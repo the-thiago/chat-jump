@@ -46,11 +46,13 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import com.thiago.chatjump.domain.model.ChatMessage
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import com.thiago.chatjump.R
 
 @Composable
 fun ThinkingBubble() {
@@ -63,7 +65,7 @@ fun ThinkingBubble() {
             .padding(16.dp)
     ) {
         Text(
-            text = "Thinking…",
+            text = stringResource(R.string.chat_component_thinking_bubble_text),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -154,7 +156,7 @@ fun MessageBubble(
                 IconButton(onClick = onCopy) {
                     Icon(
                         imageVector = Icons.Default.ContentCopy,
-                        contentDescription = "Copy",
+                        contentDescription = stringResource(R.string.chat_component_message_bubble_copy_icon_description),
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
@@ -169,7 +171,7 @@ fun MessageBubble(
                     IconButton(onClick = onPlay) {
                         Icon(
                             imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
-                            contentDescription = if (isSpeaking) "Stop" else "Play",
+                            contentDescription = if (isSpeaking) stringResource(R.string.chat_component_message_bubble_stop_icon_description) else stringResource(R.string.chat_component_message_bubble_play_icon_description),
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
