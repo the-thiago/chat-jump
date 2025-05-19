@@ -220,6 +220,7 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
         // Waveform: stays hidden until cross-fade, then fades/zooms in
         WaveformVisualizer(
             amplitude = uiState.aiAmplitude,
+            initialAmplitudeFactor = crossFadeProgress,
             modifier = Modifier.graphicsLayer {
                 alpha = crossFadeProgress // Fades in during the final cross-fade phase
                 // Standard intro scale, or adjust if it needs to match the expanded yarn line's perceived size better.

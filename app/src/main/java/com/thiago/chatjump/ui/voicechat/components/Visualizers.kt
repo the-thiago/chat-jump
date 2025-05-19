@@ -147,6 +147,7 @@ fun YarnBallVisualizer(
 fun WaveformVisualizer(
     amplitude: Float, // 0f..1f
     modifier: Modifier = Modifier,
+    initialAmplitudeFactor: Float = 1f // New parameter: 0f = flat line, 1f = full amplitude
 ) {
     // Animate phase shift for traveling wave and subtle amplitude breathing
     val infiniteTransition = rememberInfiniteTransition(label = "wavePhase")
@@ -185,7 +186,8 @@ fun WaveformVisualizer(
             val harmonic = 0.5f * sin((progress * 4f * PI + phase * 1.3f).toFloat())
             val env = (1f - (progress - 0.5f).let { it * it * 4f }.coerceIn(0f, 1f)) // subtle tapering near edges
 
-            val y = centerY + (fundamental + harmonic) * maxAmp * amplitude * breath * env
+            val waveHeight = (fundamental + harmonic) * maxAmp * amplitude * breath * env
+            val y = centerY + waveHeight * initialAmplitudeFactor // Apply the factor here
             val yPinned = if (i == 0 || i == points) centerY else y
             if (i == 0) {
                 path.moveTo(x, yPinned)
