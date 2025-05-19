@@ -134,8 +134,11 @@ fun YarnBallVisualizer(
             val orbitAdjustedRadius = baseRadius * (1f + orbitModulationFactor * sin(orbitPhase + i * PI.toFloat() * 0.5f /* Stagger orbit phase per line */))
 
             // 2. Apply individual line pulse to the orbitAdjustedRadius
-            val basePulseMagnitude = if (isRecording) 0.02f else 0.05f // Small base pulse
-            val amplitudeScaledPulse = if (isRecording) (amplitude * 0.13f) else 0f // Amplitude adds up to 0.13f
+            // When recording: very tiny base pulse, with amplitude contributing more significantly.
+            // Max pulse when recording: 0.005f (base) + 0.145f (from full amplitude) = 0.15f
+            // When idle (not recording): a gentle constant pulse.
+            val basePulseMagnitude = if (isRecording) 0.005f else 0.05f
+            val amplitudeScaledPulse = if (isRecording) (amplitude.coerceIn(0f, 1f) * 0.145f) else 0f
             val pulseMagnitude = basePulseMagnitude + amplitudeScaledPulse
 
             val lineSpecificPulseOffset = (i * PI.toFloat() * 0.75f) // Stagger pulses
