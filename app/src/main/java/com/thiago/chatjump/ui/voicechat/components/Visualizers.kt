@@ -103,7 +103,7 @@ fun YarnBallVisualizer(
 
     // Animated Pulse Magnitude
     val targetPulseMagnitude = if (isRecording) {
-        0.005f + amplitude.coerceIn(0f, 1f) * 0.145f // Min 0.5%, Max 15%
+        0.005f + amplitude.coerceIn(0f, 1f) * 0.195f // Min 0.5%, Max 20%
     } else {
         0.05f // Idle pulse 5%
     }
