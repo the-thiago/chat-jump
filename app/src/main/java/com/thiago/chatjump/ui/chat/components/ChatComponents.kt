@@ -50,9 +50,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.thiago.chatjump.R
 import com.thiago.chatjump.domain.model.ChatMessage
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import com.thiago.chatjump.R
 
 @Composable
 fun ThinkingBubble() {
