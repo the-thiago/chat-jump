@@ -5,5 +5,4 @@ data class ConversationItem(
     val title: String,
     val lastMessage: String,
     val timestamp: Long,
-    val messageCount: Int
 )

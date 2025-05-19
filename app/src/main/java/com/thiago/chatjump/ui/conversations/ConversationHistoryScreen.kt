@@ -2,6 +2,7 @@ package com.thiago.chatjump.ui.conversations
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,7 +43,6 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ConversationHistoryScreen(
     onConversationClick: (Int) -> Unit,
@@ -55,19 +55,7 @@ fun ConversationHistoryScreen(
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.conversation_history_screen_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.conversation_history_screen_back_icon_description))
-                    }
-                },
-                actions = {
-                    IconButton(onClick = onNewConversationClick) {
-                        Icon(Icons.Default.ModeEdit, stringResource(R.string.conversation_history_screen_new_conversation_icon_description))
-                    }
-                }
-            )
+            ConversationTopBar(onBackClick, onNewConversationClick)
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
@@ -76,35 +64,7 @@ fun ConversationHistoryScreen(
                 .fillMaxSize()
                 .padding(padding)
         ) {
-            // Search bar
-            SearchBar(
-                inputField = {
-                    TextField(
-                        value = state.searchQuery,
-                        onValueChange = { viewModel.onEvent(ConversationHistoryEvent.OnSearchQueryChange(it)) },
-                        placeholder = { Text(stringResource(R.string.conversation_history_screen_search_placeholder)) },
-                        leadingIcon = { Icon(Icons.Default.Search, stringResource(R.string.conversation_history_screen_search_icon_description)) },
-                        trailingIcon = {
-                            if (state.searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.onEvent(ConversationHistoryEvent.OnSearchQueryChange("")) }) {
-                                    Icon(Icons.Default.Clear, stringResource(R.string.conversation_history_screen_clear_search_icon_description))
-                                }
-                            }
-                        },
-                        singleLine = true,
-                        colors = TextFieldDefaults.colors(
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                            focusedContainerColor = MaterialTheme.colorScheme.surface
-                        )
-                    )
-                },
-                expanded = state.isSearchActive,
-                onExpandedChange = { },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                // Search suggestions could go here
-            }
-
+            ConversationSearchBar(state, viewModel::onEvent)
             Box(
                 modifier = Modifier.fillMaxSize()
             ) {
@@ -115,21 +75,10 @@ fun ConversationHistoryScreen(
                         )
                     }
                     state.conversations.isEmpty() && state.searchQuery.isNotBlank() -> {
-                        Text(
-                            text = stringResource(R.string.conversation_history_screen_no_results_message),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            modifier = Modifier.align(Alignment.Center)
-                        )
+                        EmptySearchText()
                     }
                     state.conversations.isEmpty() -> {
-                        Text(
-                            text = stringResource(R.string.conversation_history_screen_empty_state_message),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
-                            modifier = Modifier.align(Alignment.Center),
-                            textAlign = TextAlign.Center,
-                        )
+                        ConversationsEmptyText()
                     }
                     else -> {
                         LazyColumn(
@@ -147,6 +96,96 @@ fun ConversationHistoryScreen(
             }
         }
     }
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ConversationTopBar(onBackClick: () -> Unit, onNewConversationClick: () -> Unit) {
+    TopAppBar(
+        title = { Text(stringResource(R.string.conversation_history_screen_title)) },
+        navigationIcon = {
+            IconButton(onClick = onBackClick) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    stringResource(R.string.conversation_history_screen_back_icon_description)
+                )
+            }
+        },
+        actions = {
+            IconButton(onClick = onNewConversationClick) {
+                Icon(
+                    Icons.Default.ModeEdit,
+                    stringResource(R.string.conversation_history_screen_new_conversation_icon_description)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ConversationSearchBar(
+    state: ConversationHistoryState,
+    onEvent: (ConversationHistoryEvent) -> Unit,
+) {
+    SearchBar(
+        inputField = {
+            TextField(
+                value = state.searchQuery,
+                onValueChange = { onEvent(ConversationHistoryEvent.OnSearchQueryChange(it)) },
+                placeholder = { Text(stringResource(R.string.conversation_history_screen_search_placeholder)) },
+                leadingIcon = {
+                    Icon(
+                        Icons.Default.Search,
+                        stringResource(R.string.conversation_history_screen_search_icon_description)
+                    )
+                },
+                trailingIcon = {
+                    if (state.searchQuery.isNotEmpty()) {
+                        IconButton(onClick = {
+                            onEvent(ConversationHistoryEvent.OnSearchQueryChange(""))
+                        }) {
+                            Icon(
+                                Icons.Default.Clear,
+                                stringResource(R.string.conversation_history_screen_clear_search_icon_description)
+                            )
+                        }
+                    }
+                },
+                singleLine = true,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                    focusedContainerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        expanded = state.isSearchActive,
+        onExpandedChange = { },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        // Search suggestions could go here
+    }
+}
+
+@Composable
+private fun BoxScope.EmptySearchText() {
+    Text(
+        text = stringResource(R.string.conversation_history_screen_no_results_message),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        modifier = Modifier.align(Alignment.Center)
+    )
+}
+
+@Composable
+private fun BoxScope.ConversationsEmptyText() {
+    Text(
+        text = stringResource(R.string.conversation_history_screen_empty_state_message),
+        style = MaterialTheme.typography.bodyLarge,
+        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+        modifier = Modifier.align(Alignment.Center),
+        textAlign = TextAlign.Center,
+    )
 }
 
 @Composable

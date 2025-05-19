@@ -26,7 +26,6 @@ class ChatRepositoryImpl @Inject constructor(
                     title = it.title,
                     lastMessage = "",
                     timestamp = it.updatedAt,
-                    messageCount = 0
                 )
             }
         }

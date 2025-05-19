@@ -15,6 +15,7 @@ import javax.inject.Singleton
 class AIChatRepositoryImpl @Inject constructor(
     private val openAIDataSource: OpenAIDataSource
 ) : AIChatRepository {
+
     override suspend fun getResponse(message: ChatMessage): Flow<String> = flow {
         try {
             Log.i("AIChatRepo", "Starting getResponse")

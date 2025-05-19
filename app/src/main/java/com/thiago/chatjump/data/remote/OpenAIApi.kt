@@ -28,7 +28,6 @@ interface OpenAIApi {
         @Body request: ChatCompletionRequest
     ): Response<ResponseBody>
 
-    // Speech synthesis
     @POST("v1/audio/speech")
     @Headers("Content-Type: application/json")
     suspend fun createSpeechJson(

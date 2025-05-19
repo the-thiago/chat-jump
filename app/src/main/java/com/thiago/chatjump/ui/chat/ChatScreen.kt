@@ -104,6 +104,12 @@ fun ChatScreen(
         }
     }
 
+    LaunchedEffect(state.inputText) { // Automatically dismiss error when user starts typing again
+        if (state.inputText.isNotBlank() && state.error != null && !state.canRetry) {
+            viewModel.onEvent(ChatEvent.OnDismissError)
+        }
+    }
+
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.ime),
         topBar = {
@@ -117,55 +123,7 @@ fun ChatScreen(
             )
         },
         bottomBar = {
-            // Input area relocated to bottomBar so Snackbar appears above it
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface)
-                    .padding(16.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    OutlinedTextField(
-                        value = state.inputText,
-                        onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
-                        modifier = Modifier.weight(1f),
-                        placeholder = { Text(stringResource(R.string.chat_screen_input_placeholder)) },
-                        maxLines = 10,
-                        shape = RoundedCornerShape(16.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    // Send button
-                    val enabled = state.inputText.isNotBlank() && !state.isThinking && state.currentStreamingMessage.isEmpty()
-                    IconButton(
-                        onClick = { viewModel.onEvent(ChatEvent.OnSendMessage(state.inputText)) },
-                        enabled = enabled
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.Send,
-                            contentDescription = stringResource(R.string.chat_screen_send_icon_description),
-                            tint = if (enabled)
-                                MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
-                    }
-
-                    // Wave button
-                    IconButton(
-                        onClick = onRealTimeClick
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.sound_wave),
-                            contentDescription = stringResource(R.string.chat_screen_real_time_icon_description),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-            }
+            ChatTextField(state, viewModel::onEvent, onRealTimeClick)
         }
     ) { padding ->
         Surface(
@@ -178,20 +136,8 @@ fun ChatScreen(
                     .padding(padding)
             ) {
                 if (state.messages.isEmpty() && !state.isThinking && state.currentStreamingMessage.isEmpty() && state.error == null) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = stringResource(R.string.chat_screen_empty_state_message),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
-                        )
-                    }
+                    EmptyChatText()
                 }
-                // Messages list
                 LazyColumn(
                     state = listState,
                     reverseLayout = true,
@@ -199,44 +145,12 @@ fun ChatScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
-                    // Error message & retry button (will appear at the very bottom because of reverseLayout)
-                    if (state.error != null) {
+                    state.error?.let {
                         item {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Text(
-                                    text = state.error!!,
-                                    color = MaterialTheme.colorScheme.error,
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-
-                                if (state.canRetry) {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Button(onClick = {
-                                        viewModel.onEvent(ChatEvent.OnRetry)
-                                    }) {
-                                        Text(stringResource(R.string.chat_screen_retry_button))
-                                    }
-                                } else {
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    IconButton(onClick = { viewModel.onEvent(ChatEvent.OnDismissError) }) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Close,
-                                            contentDescription = stringResource(R.string.chat_screen_dismiss_error_icon_description),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
+                            ChatError(it, state, viewModel::onEvent)
                         }
                     }
 
-                    // Extra placeholders (thinking/streaming) should be at the bottom when present
                     if (state.isThinking) {
                         item {
                             ThinkingBubble()
@@ -264,11 +178,116 @@ fun ChatScreen(
             }
         }
     }
+}
 
-    // Automatically dismiss error when user starts typing again
-    LaunchedEffect(state.inputText) {
-        if (state.inputText.isNotBlank() && state.error != null && !state.canRetry) {
-            viewModel.onEvent(ChatEvent.OnDismissError)
+@Composable
+private fun EmptyChatText() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = stringResource(R.string.chat_screen_empty_state_message),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f)
+        )
+    }
+}
+
+@Composable
+private fun ChatTextField(
+    state: ChatState,
+    onEvent: (ChatEvent) -> Unit,
+    onRealTimeClick: () -> Unit
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface)
+            .padding(16.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            OutlinedTextField(
+                value = state.inputText,
+                onValueChange = { onEvent(ChatEvent.OnInputTextChange(it)) },
+                modifier = Modifier.weight(1f),
+                placeholder = { Text(stringResource(R.string.chat_screen_input_placeholder)) },
+                maxLines = 10,
+                shape = RoundedCornerShape(16.dp)
+            )
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            // Send button
+            val enabled =
+                state.inputText.isNotBlank() && !state.isThinking && state.currentStreamingMessage.isEmpty()
+            IconButton(
+                onClick = { onEvent(ChatEvent.OnSendMessage(state.inputText)) },
+                enabled = enabled
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.Send,
+                    contentDescription = stringResource(R.string.chat_screen_send_icon_description),
+                    tint = if (enabled)
+                        MaterialTheme.colorScheme.primary
+                    else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                )
+            }
+
+            // Wave button
+            IconButton(
+                onClick = onRealTimeClick
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.sound_wave),
+                    contentDescription = stringResource(R.string.chat_screen_real_time_icon_description),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ChatError(
+    error: String,
+    state: ChatState,
+    onEvent: (ChatEvent) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = error,
+            color = MaterialTheme.colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        if (state.canRetry) {
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(onClick = {
+                onEvent(ChatEvent.OnRetry)
+            }) {
+                Text(stringResource(R.string.chat_screen_retry_button))
+            }
+        } else {
+            Spacer(modifier = Modifier.width(8.dp))
+            IconButton(onClick = { onEvent(ChatEvent.OnDismissError) }) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = stringResource(R.string.chat_screen_dismiss_error_icon_description),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
         }
     }
 }
