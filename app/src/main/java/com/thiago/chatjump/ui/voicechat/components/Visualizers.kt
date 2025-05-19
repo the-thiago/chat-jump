@@ -70,16 +70,6 @@ fun YarnBallVisualizer(
     val hueBase = ((rotation * (1f - morphToLineProgress) + amplitude * 360f) * 0.4f + if (isRecording) 160f else 220f) % 360f
     val baseColor = Color.hsv(hueBase, 0.7f, 1f)
 
-    // Pulse scale controls ball breathing
-    val pulse by infiniteTransition.animateFloat(
-        initialValue = 0.9f,
-        targetValue = 1.1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (isRecording) 600 else 1400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ), label = "pulse"
-    )
-
     // Additional small oscillation that bends the threads while rotating
     val curvaturePhase by infiniteTransition.animateFloat(
         initialValue = 0f,
@@ -90,19 +80,42 @@ fun YarnBallVisualizer(
         ), label = "curvaturePhase"
     )
 
+    // New animation for per-line radius modulation to create an orbiting effect
+    val orbitPhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2f * PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = if (isRecording) 5000 else 8000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ), label = "orbitPhase"
+    )
+
+    // Animation to drive individual, out-of-sync line pulses
+    // Speed of individual pulses now also reacts to amplitude
+    val individualPulseDuration = ((if (isRecording) 800 else 1500) * (1f - amplitude * 0.5f)).toInt().coerceAtLeast(300)
+    val individualPulsePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2f * PI).toFloat(), // Cycle through a full sine wave
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = individualPulseDuration, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart // Restart for continuous cycling
+        ), label = "individualPulsePhase"
+    )
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val center = this.center
         val baseRadius = size.minDimension * 0.25f
-        val radius = baseRadius * (if (isRecording) pulse else 1f)
+        // globalRadius is now the baseline before individual pulsing
+        // val globalRadius = baseRadius * (if (isRecording) pulse else 1f) // Old global pulse removed
 
-        // Draw subtle radial gradient behind for 3D shading
+        // Draw subtle radial gradient behind for 3D shading (using baseRadius for stability)
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(baseColor.copy(alpha = 0.15f), baseColor.copy(alpha = 0.05f), Color.Transparent),
                 center = center,
-                radius = radius * 1.25f
+                radius = baseRadius * 1.25f // Gradient based on stable baseRadius
             ),
-            radius = radius * 1.25f,
+            radius = baseRadius * 1.25f,
             center = center
         )
 
@@ -116,13 +129,27 @@ fun YarnBallVisualizer(
             val dx = cos(angleRad)
             val dy = sin(angleRad)
 
-            val start = Offset(center.x - dx * radius, center.y - dy * radius)
-            val end = Offset(center.x + dx * radius, center.y + dy * radius)
+            // 1. Apply global orbiting modulation to baseRadius
+            val orbitModulationFactor = 0.08f // Gentle global orbit +/- 8%
+            val orbitAdjustedRadius = baseRadius * (1f + orbitModulationFactor * sin(orbitPhase + i * PI.toFloat() * 0.5f /* Stagger orbit phase per line */))
+
+            // 2. Apply individual line pulse to the orbitAdjustedRadius
+            val basePulseMagnitude = if (isRecording) 0.02f else 0.05f // Small base pulse
+            val amplitudeScaledPulse = if (isRecording) (amplitude * 0.13f) else 0f // Amplitude adds up to 0.13f
+            val pulseMagnitude = basePulseMagnitude + amplitudeScaledPulse
+
+            val lineSpecificPulseOffset = (i * PI.toFloat() * 0.75f) // Stagger pulses
+            val linePulseScale = 1f + pulseMagnitude * sin(individualPulsePhase + lineSpecificPulseOffset)
+
+            val lineRadius = orbitAdjustedRadius * linePulseScale
+
+            val start = Offset(center.x - dx * lineRadius, center.y - dy * lineRadius)
+            val end = Offset(center.x + dx * lineRadius, center.y + dy * lineRadius)
 
             // Perpendicular vector for control point
             val perp = Offset(-dy, dx)
             // Gradually remove curvature so threads become straight
-            val curvatureMag = radius * 0.35f * (0.6f + 0.4f * sin(curvaturePhase + i) + amplitude * 0.5f) * (1f - morphToLineProgress)
+            val curvatureMag = lineRadius * 0.35f * (0.6f + 0.4f * sin(curvaturePhase + i) + amplitude * 0.5f) * (1f - morphToLineProgress)
             val control = Offset(center.x + perp.x * curvatureMag, center.y + perp.y * curvatureMag)
 
             val depthRaw = (cos(angleRad) + 1f) / 2f
