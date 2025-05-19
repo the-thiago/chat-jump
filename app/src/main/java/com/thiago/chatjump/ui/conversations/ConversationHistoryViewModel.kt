@@ -2,7 +2,6 @@ package com.thiago.chatjump.ui.conversations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.thiago.chatjump.domain.model.ConversationItem
 import com.thiago.chatjump.domain.repository.ChatRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
