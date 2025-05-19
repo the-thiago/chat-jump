@@ -165,30 +165,35 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
         label = "visualTransition"
     )
 
+    // Phase-split helpers so the yarn morph happens first, then we cross-fade
+    val morphProgress = (progress * 2f).coerceIn(0f, 1f)             // 0->1 during first half
+    val secondHalfFactor = ((progress - 0.5f) * 2f).coerceIn(0f, 1f) // 0 during first half, 0->1 during second half
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Yarn Ball fades out & scales down as progress increases
+        // Yarn Ball first morphs to a flat line (morphProgress) and only then fades out
         YarnBallVisualizer(
             isRecording = uiState.isRecording,
             amplitude = uiState.userAmplitude,
-            morphToLineProgress = progress,
+            morphToLineProgress = morphProgress,
             modifier = Modifier.graphicsLayer {
-                alpha = 1f - progress
-                scaleX = 1f - 0.2f * progress
-                scaleY = 1f - 0.2f * progress
+                // Visible for the whole first half, then fades & scales down
+                alpha = 1f - secondHalfFactor
+                scaleX = 1f - 0.2f * secondHalfFactor
+                scaleY = 1f - 0.2f * secondHalfFactor
             }
         )
 
-        // Waveform fades in & scales up as progress increases
+        // Waveform stays hidden until the yarn is flat, then fades/zooms in
         WaveformVisualizer(
             amplitude = uiState.aiAmplitude,
             modifier = Modifier.graphicsLayer {
-                alpha = progress
-                scaleX = 0.8f + 0.2f * progress
-                scaleY = 0.8f + 0.2f * progress
+                alpha = secondHalfFactor
+                scaleX = 0.8f + 0.2f * secondHalfFactor
+                scaleY = 0.8f + 0.2f * secondHalfFactor
             }
         )
 
