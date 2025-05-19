@@ -17,6 +17,7 @@ import retrofit2.http.POST
 import retrofit2.http.Part
 
 interface OpenAIApi {
+
     @POST("v1/chat/completions")
     suspend fun createChatCompletion(
         @Body request: ChatCompletionRequest

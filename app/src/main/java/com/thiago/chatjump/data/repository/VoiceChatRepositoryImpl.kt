@@ -5,15 +5,9 @@ import android.media.MediaRecorder
 import android.os.Environment
 import com.thiago.chatjump.data.remote.OpenAIDataSource
 import com.thiago.chatjump.data.remote.dto.ChatMessageDto
-import com.thiago.chatjump.data.remote.dto.ChatRequest
-import com.thiago.chatjump.data.remote.dto.SpeechRequest
 import com.thiago.chatjump.domain.repository.VoiceChatRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.MultipartBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.File
 import java.util.UUID
 import javax.inject.Inject
@@ -76,26 +70,15 @@ class VoiceChatRepositoryImpl @Inject constructor(
     }
 
     private suspend fun transcribe(audioFile: File): String {
-        val mediaType = "audio/mp4".toMediaType()
-        val body = audioFile.asRequestBody(mediaType)
-        val part = MultipartBody.Part.createFormData("file", audioFile.name, body)
-        val modelBody = "whisper-1".toRequestBody("text/plain".toMediaType())
-        val langBody = "en".toRequestBody("text/plain".toMediaType())
-        val response = service.transcribeAudio(part, modelBody, langBody)
-        return response.body()?.text ?: ""
+        val response = service.transcribeAudio(audioFile)
+        return response
     }
 
     private suspend fun chat(userText: String): String {
         // Append the new user message to the running history
         conversationHistory.add(ChatMessageDto("user", userText))
 
-        val response = service.chatCompletion(
-            ChatRequest(
-                messages = conversationHistory
-            )
-        )
-
-        val aiText = response.body()?.choices?.firstOrNull()?.message?.content ?: ""
+        val aiText = service.chatCompletion(conversationHistory)
 
         // Append assistant reply to history for future context
         if (aiText.isNotBlank()) {
@@ -107,8 +90,7 @@ class VoiceChatRepositoryImpl @Inject constructor(
 
     private suspend fun textToSpeech(context: Context, text: String): String? {
         if (text.isBlank()) return null
-        val request = SpeechRequest(input = text, model = "tts-1", voice = "alloy", response_format = "mp3")
-        val responseBody = service.createSpeech(request).body() ?: return null
+        val responseBody = service.createSpeech(text) ?: return null
         val dir = context.getExternalFilesDir(Environment.DIRECTORY_MUSIC) ?: context.cacheDir
         if (!dir.exists()) dir.mkdirs()
         val audioFile = File(dir, "ai_${UUID.randomUUID()}.mp3")
