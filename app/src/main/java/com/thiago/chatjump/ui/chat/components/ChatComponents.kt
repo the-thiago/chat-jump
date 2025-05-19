@@ -215,7 +215,7 @@ fun StreamingMessageBubble(
                 // Each token gets its own alpha animation that starts as soon as it appears
                 val alpha = remember { Animatable(0f) }
                 LaunchedEffect(char) {
-                    alpha.animateTo(1f, animationSpec = tween(durationMillis = 150))
+                    alpha.animateTo(1f, animationSpec = tween(durationMillis = 400))
                 }
                 Text(
                     text = char.toString(),
