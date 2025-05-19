@@ -4,6 +4,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -40,9 +41,7 @@ fun YarnBallVisualizer(
     modifier: Modifier = Modifier,
     targetFlatLineStrokeDp: Dp = 3.dp // New parameter for final flat line stroke
 ) {
-    // Simple infinite rotation based on time
     val infiniteTransition = rememberInfiniteTransition(label = "yarnBallRotation")
-
     val density = LocalDensity.current
 
     // Base duration of one full revolution and a dynamic version that speeds up
@@ -102,6 +101,18 @@ fun YarnBallVisualizer(
         ), label = "individualPulsePhase"
     )
 
+    // Animated Pulse Magnitude
+    val targetPulseMagnitude = if (isRecording) {
+        0.005f + amplitude.coerceIn(0f, 1f) * 0.145f // Min 0.5%, Max 15%
+    } else {
+        0.05f // Idle pulse 5%
+    }
+    val animatedPulseMagnitude by animateFloatAsState(
+        targetValue = targetPulseMagnitude,
+        animationSpec = tween(durationMillis = 150, easing = FastOutSlowInEasing),
+        label = "animatedPulseMagnitude"
+    )
+
     Canvas(modifier = modifier.fillMaxSize()) {
         val center = this.center
         val baseRadius = size.minDimension * 0.25f
@@ -137,14 +148,8 @@ fun YarnBallVisualizer(
             // When recording: very tiny base pulse, with amplitude contributing more significantly.
             // Max pulse when recording: 0.005f (base) + 0.145f (from full amplitude) = 0.15f
             // When idle (not recording): a gentle constant pulse.
-            val basePulseMagnitude = if (isRecording) 0.005f else 0.05f
-            val amplitudeScaledPulse = if (isRecording) (amplitude.coerceIn(0f, 1f) * 0.145f) else 0f
-            val pulseMagnitude = basePulseMagnitude + amplitudeScaledPulse
-
-            val lineSpecificPulseOffset = (i * PI.toFloat() * 0.75f) // Stagger pulses
-            // Remap sin output from [-1, 1] to [0, 1] for an outward pulse effect
-            val pulseCycleProgress = (1f + sin(individualPulsePhase + lineSpecificPulseOffset)) / 2f
-            val linePulseScale = 1f + pulseMagnitude * pulseCycleProgress
+            val pulseCycleProgress = (1f + sin(individualPulsePhase + (i * PI.toFloat() * 0.75f))) / 2f
+            val linePulseScale = 1f + animatedPulseMagnitude * pulseCycleProgress
 
             val lineRadius = orbitAdjustedRadius * linePulseScale
 
