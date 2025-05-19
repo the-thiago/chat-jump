@@ -186,44 +186,17 @@ fun StreamingMessageBubble(
     text: String,
     modifier: Modifier = Modifier
 ) {
-    // Pulse background as before
-    val bgTransition = rememberInfiniteTransition(label = "streaming_bg")
-    val bgAlpha by bgTransition.animateFloat(
-        initialValue = 0.6f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(300, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "streaming_bg_alpha"
-    )
+    // Keep track of the individual tokens that have already arrived
+    val tokens = remember { mutableStateListOf<Char>() }
 
-    // State to track words and animate the newly completed word
-    val words = remember { mutableStateListOf<String>() }
-
-    // Alpha that will be applied only to the last (newly added) word
-    val lastWordAlpha = remember { Animatable(1f) }
-
+    // Append any new tokens that have arrived since the last composition
     LaunchedEffect(text) {
-        // Split by whitespace to get completed words ("word1 word2 ...")
-        val parts = text.trim().split(" ")
-
-        // If size increased, a new word finished streaming
-        if (parts.size > words.size) {
-            val newWords = parts.drop(words.size)
-            words.addAll(newWords)
-
-            // Animate the fade-in of the last completed word
-            lastWordAlpha.snapTo(0f)
-            lastWordAlpha.animateTo(1f, animationSpec = tween(durationMillis = 45))
-        } else {
-            // Update the last (in-progress) word without triggering animation
-            // This covers the scenario where the current word is still streaming
-            if (words.isNotEmpty()) {
-                words[words.lastIndex] = parts.last()
-            } else if (parts.isNotEmpty()) {
-                words.add(parts.last())
-            }
+        // If the stream restarted, reset our state
+        if (text.length < tokens.size) {
+            tokens.clear()
+        }
+        if (text.length > tokens.size) {
+            tokens.addAll(text.substring(tokens.size).toList())
         }
     }
 
@@ -232,18 +205,21 @@ fun StreamingMessageBubble(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 8.dp)
             .clip(RoundedCornerShape(16.dp))
-            .background(MaterialTheme.colorScheme.primary.copy(alpha = bgAlpha))
+            .background(MaterialTheme.colorScheme.primary)
             .padding(16.dp)
     ) {
         FlowRow {
-            words.forEachIndexed { index, word ->
+            tokens.forEach { char ->
+                // Each token gets its own alpha animation that starts as soon as it appears
+                val alpha = remember { Animatable(0f) }
+                LaunchedEffect(char) {
+                    alpha.animateTo(1f, animationSpec = tween(durationMillis = 150))
+                }
                 Text(
-                    text = "$word ",
+                    text = char.toString(),
                     color = MaterialTheme.colorScheme.onPrimary,
                     fontSize = 16.sp,
-                    modifier = Modifier.graphicsLayer {
-                        this.alpha = if (index == words.lastIndex) lastWordAlpha.value else 1f
-                    }
+                    modifier = Modifier.graphicsLayer { this.alpha = alpha.value }
                 )
             }
         }
