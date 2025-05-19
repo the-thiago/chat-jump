@@ -61,4 +61,8 @@ class ChatRepositoryImpl @Inject constructor(
             )
         )
     }
+
+    override suspend fun deleteMessage(messageId: String) {
+        messageDao.deleteMessageById(messageId)
+    }
 } 

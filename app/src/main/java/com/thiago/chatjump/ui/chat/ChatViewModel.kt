@@ -68,6 +68,7 @@ class ChatViewModel @Inject constructor(
                     }
                     return
                 }
+                removePendingMessage()
                 val userMessage = ChatMessage(
                     id = UUID.randomUUID().toString(),
                     content = event.text,
@@ -97,6 +98,30 @@ class ChatViewModel @Inject constructor(
         }
     }
 
+    private fun removePendingMessage() {
+        // If there's a pending user message (from a previous failed attempt), remove it from UI and database
+        pendingUserMessage?.let { messageToRemove ->
+            // Remove from UI list
+            _state.update { currentState ->
+                currentState.copy(
+                    messages = currentState.messages.filterNot { it.id == messageToRemove.id },
+                    error = null,
+                    canRetry = false,
+                )
+            }
+
+            // Remove from database if it had been saved already
+            currentConversationId?.let {
+                viewModelScope.launch {
+                    chatRepository.deleteMessage(messageToRemove.id)
+                }
+            }
+
+            // Clear pending reference
+            pendingUserMessage = null
+        }
+    }
+
     private fun onPlayResponse(event: ChatEvent.OnPlayResponse) {
         if (event.messageId == null) {
             textToSpeechRepositoryImpl.stop()
@@ -122,7 +147,7 @@ class ChatViewModel @Inject constructor(
                     isThinking = true,
                 )
             }
-            delay(50L) // To make sure the thinking bubble is visible
+            delay(50L) // Just to make sure the thinking bubble is visible
             eventChannel.send(ChatUiEvent.ScrollToBottom)
         }
         viewModelScope.launch {
@@ -235,7 +260,7 @@ class ChatViewModel @Inject constructor(
             it.copy(
                 isThinking = false,
                 currentStreamingMessage = "",
-                error = "Failed to respond.",
+                error = "Failed to respond",
                 canRetry = true,
             )
         }
