@@ -46,6 +46,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.Dp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -184,6 +185,8 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
     val crossFadeProgress = if (progress < holdAndExpandEndTime) 0f
                         else ((progress - holdAndExpandEndTime) / (1f - holdAndExpandEndTime)).coerceIn(0f, 1f)
 
+    val targetStrokeWidth: Dp = 3.dp // Define common stroke width
+
     BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
@@ -204,6 +207,7 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
             isRecording = uiState.isRecording,
             amplitude = uiState.userAmplitude,
             morphToLineProgress = yarnMorphProgress,
+            targetFlatLineStrokeDp = targetStrokeWidth, // Pass common stroke width
             modifier = Modifier.graphicsLayer {
                 alpha = 1f - crossFadeProgress // Fades out during the final cross-fade phase
 
@@ -221,6 +225,7 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
         WaveformVisualizer(
             amplitude = uiState.aiAmplitude,
             initialAmplitudeFactor = crossFadeProgress,
+            strokeWidthDp = targetStrokeWidth, // Pass common stroke width
             modifier = Modifier.graphicsLayer {
                 alpha = crossFadeProgress // Fades in during the final cross-fade phase
                 // Standard intro scale, or adjust if it needs to match the expanded yarn line's perceived size better.

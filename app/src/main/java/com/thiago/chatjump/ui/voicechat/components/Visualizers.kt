@@ -18,7 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.util.lerp
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin
@@ -34,10 +37,13 @@ fun YarnBallVisualizer(
     amplitude: Float = 0f,
     // 0f = full yarn ball, 1f = totally flattened into a single line
     morphToLineProgress: Float = 0f,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    targetFlatLineStrokeDp: Dp = 3.dp // New parameter for final flat line stroke
 ) {
     // Simple infinite rotation based on time
     val infiniteTransition = rememberInfiniteTransition(label = "yarnBallRotation")
+
+    val density = LocalDensity.current
 
     // Base duration of one full revolution and a dynamic version that speeds up
     // proportionally with the current voice amplitude. The higher the amplitude,
@@ -54,7 +60,12 @@ fun YarnBallVisualizer(
         ), label = "rotation"
     )
 
-    val baseStroke = if (isRecording) 6f else 4f
+    // Base stroke for the yarn ball form (when not morphing)
+    val yarnBallBaseStrokePx = with(density) { (if (isRecording) 4.dp else 3.dp).toPx() }
+
+    // Target stroke for the final flat line
+    val finalFlatLineStrokePx = with(density) { targetFlatLineStrokeDp.toPx() }
+
     // Freeze the hue shift as we morph so that the colour transition also calms down.
     val hueBase = ((rotation * (1f - morphToLineProgress) + amplitude * 360f) * 0.4f + if (isRecording) 160f else 220f) % 360f
     val baseColor = Color.hsv(hueBase, 0.7f, 1f)
@@ -117,11 +128,15 @@ fun YarnBallVisualizer(
             val depthRaw = (cos(angleRad) + 1f) / 2f
             val depth = depthRaw * (1f - morphToLineProgress) + morphToLineProgress // smoothly approach 1f
 
-            // As we collapse into one line, diminish the contribution from multiple
-            // overlapping strokes so the final line isn't excessively thick.
-            val strokeScale = 1f - morphToLineProgress + morphToLineProgress / lines
+            // Calculate effective stroke scale. When morphProgress is 0, scale is 1.
+            // When morphProgress is 1, scale is adjusted so the final line width matches targetFlatLineStrokeDp.
+            // The reference stroke for a flat line (amplitude=0, depth=1) without this special scaling would be yarnBallBaseStrokePx * 1.4f.
+            val baseForFlatLine = yarnBallBaseStrokePx * 1.4f
+            val strokeScaleAtMorphEnd = if (baseForFlatLine > 0.001f) finalFlatLineStrokePx / baseForFlatLine else 1f
 
-            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.4f) * strokeScale
+            val strokeScale = lerp(1f, strokeScaleAtMorphEnd, morphToLineProgress)
+
+            val strokeWidth = yarnBallBaseStrokePx * (0.6f + 0.8f * depth) * (1f + amplitude * 0.4f) * strokeScale
             val color = baseColor.copy(alpha = (0.3f + 0.7f * depth) * strokeScale)
 
             val path = Path().apply {
@@ -147,7 +162,8 @@ fun YarnBallVisualizer(
 fun WaveformVisualizer(
     amplitude: Float, // 0f..1f
     modifier: Modifier = Modifier,
-    initialAmplitudeFactor: Float = 1f // New parameter: 0f = flat line, 1f = full amplitude
+    initialAmplitudeFactor: Float = 1f, // 0f = flat line, 1f = full amplitude
+    strokeWidthDp: Dp = 3.dp // New parameter for stroke width
 ) {
     // Animate phase shift for traveling wave and subtle amplitude breathing
     val infiniteTransition = rememberInfiniteTransition(label = "wavePhase")
@@ -200,7 +216,7 @@ fun WaveformVisualizer(
             brush = Brush.horizontalGradient(
                 colors = listOf(baseColor.copy(alpha = 0.1f), baseColor, baseColor.copy(alpha = 0.1f))
             ),
-            style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
+            style = Stroke(width = strokeWidthDp.toPx(), cap = StrokeCap.Round)
         )
     }
 } 
