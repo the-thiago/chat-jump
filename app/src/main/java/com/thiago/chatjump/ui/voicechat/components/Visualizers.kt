@@ -138,7 +138,6 @@ fun YarnBallVisualizer(
 fun WaveformVisualizer(
     amplitude: Float, // 0f..1f
     modifier: Modifier = Modifier,
-    color: Color = Color(0xFF00C853),
 ) {
     // Animate phase shift for traveling wave and subtle amplitude breathing
     val infiniteTransition = rememberInfiniteTransition(label = "wavePhase")
@@ -159,6 +158,10 @@ fun WaveformVisualizer(
             repeatMode = RepeatMode.Reverse
         ), label = "breath"
     )
+
+    // Derive a hue similar to the YarnBall formula so both visualizers stay in sync.
+    val hueBase = (((phase * 180f / PI).toFloat() + amplitude * 360f) * 0.4f + 220f) % 360f
+    val baseColor = Color.hsv(hueBase, 0.7f, 1f)
 
     Canvas(modifier = modifier.fillMaxSize()) {
         val centerY = size.height / 2f
@@ -183,7 +186,7 @@ fun WaveformVisualizer(
         drawPath(
             path = path,
             brush = Brush.horizontalGradient(
-                colors = listOf(color.copy(alpha = 0.1f), color, color.copy(alpha = 0.1f))
+                colors = listOf(baseColor.copy(alpha = 0.1f), baseColor, baseColor.copy(alpha = 0.1f))
             ),
             style = Stroke(width = 6.dp.toPx(), cap = StrokeCap.Round)
         )
