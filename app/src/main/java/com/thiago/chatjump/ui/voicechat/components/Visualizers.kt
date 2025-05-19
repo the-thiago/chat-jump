@@ -36,11 +36,18 @@ fun YarnBallVisualizer(
 ) {
     // Simple infinite rotation based on time
     val infiniteTransition = rememberInfiniteTransition(label = "yarnBallRotation")
+
+    // Base duration of one full revolution and a dynamic version that speeds up
+    // proportionally with the current voice amplitude. The higher the amplitude,
+    // the quicker the spin (up to ~70 % faster).
+    val baseDuration = if (isRecording) 2000 else 6000
+    val rotationDuration = (baseDuration * (1f - 0.7f * amplitude)).toInt().coerceAtLeast(500)
+
     val rotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = if (isRecording) 2000 else 6000, easing = LinearEasing),
+            animation = tween(durationMillis = rotationDuration, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ), label = "rotation"
     )
@@ -70,13 +77,10 @@ fun YarnBallVisualizer(
         ), label = "curvaturePhase"
     )
 
-    // Apply amplitude to rotation offset for faster spin
-    val rotationOffset = amplitude * 360f
-
     Canvas(modifier = modifier.fillMaxSize()) {
         val center = this.center
         val baseRadius = size.minDimension * 0.25f
-        val radius = baseRadius * (if (isRecording) pulse else 1f) * (1f + amplitude * 0.3f)
+        val radius = baseRadius * (if (isRecording) pulse else 1f)
 
         // Draw subtle radial gradient behind for 3D shading
         drawCircle(
@@ -91,7 +95,7 @@ fun YarnBallVisualizer(
 
         val lines = 6 // more threads for a fuller ball
         for (i in 0 until lines) {
-            val angleDeg = rotation + rotationOffset + i * 360f / lines
+            val angleDeg = rotation + i * 360f / lines
             val angleRad = Math.toRadians(angleDeg.toDouble()).toFloat()
 
             // Direction unit vector
@@ -108,7 +112,7 @@ fun YarnBallVisualizer(
 
             val depth = (cos(angleRad) + 1f) / 2f // 0 (back) .. 1 (front)
 
-            val strokeWidth = baseStroke * (0.6f + 0.8f * depth)
+            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.8f)
             val color = baseColor.copy(alpha = 0.3f + 0.7f * depth)
 
             val path = Path().apply {
