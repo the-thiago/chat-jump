@@ -30,6 +30,11 @@ fun ChatNavigation(
                 onConversationHistoryClick = {
                     navController.navigate(Screen.ConversationHistory.route)
                 },
+                onNewConversationClick = {
+                    navController.navigate(Screen.Chat.createRoute()) {
+                        popUpTo(Screen.Chat.route) { inclusive = true }
+                    }
+                },
                 onRealTimeClick = {
                     navController.navigate(Screen.VoiceChat.route)
                 },

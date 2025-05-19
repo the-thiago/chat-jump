@@ -23,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.ModeEdit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -59,6 +60,7 @@ import kotlinx.coroutines.launch
 fun ChatScreen(
     modifier: Modifier = Modifier,
     onConversationHistoryClick: () -> Unit,
+    onNewConversationClick: () -> Unit,
     onRealTimeClick: () -> Unit,
     viewModel: ChatViewModel = hiltViewModel(),
     conversationId: Int
@@ -118,6 +120,13 @@ fun ChatScreen(
                 navigationIcon = {
                     IconButton(onClick = onConversationHistoryClick) {
                         Icon(Icons.AutoMirrored.Filled.List, stringResource(R.string.chat_screen_conversation_history_icon_description))
+                    }
+                },
+                actions = {
+                    if (state.messages.isNotEmpty()) {
+                        IconButton(onClick = onNewConversationClick) {
+                            Icon(Icons.Default.ModeEdit, stringResource(R.string.conversation_history_screen_new_conversation_icon_description))
+                        }
                     }
                 }
             )
