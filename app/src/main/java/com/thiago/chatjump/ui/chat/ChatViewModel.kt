@@ -80,7 +80,7 @@ class ChatViewModel @Inject constructor(
             }
             ChatEvent.OnRetry -> {
                 if (!NetworkUtil.isNetworkAvailable(context)) {
-                    _state.update { it.copy(error = "No internet connection", canRetry = false) }
+                    _state.update { it.copy(error = "No internet connection") }
                     return
                 }
                 viewModelScope.launch {
@@ -88,6 +88,7 @@ class ChatViewModel @Inject constructor(
                         createConversationTitle()
                         getAIResponse()
                     }
+                    _state.update { it.copy(error = null, canRetry = false) }
                 }
             }
             ChatEvent.OnDismissError -> {

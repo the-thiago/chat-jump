@@ -23,9 +23,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,7 +31,6 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +45,10 @@ import com.thiago.chatjump.ui.chat.components.StreamingMessageBubble
 import com.thiago.chatjump.ui.chat.components.ThinkingBubble
 import com.thiago.chatjump.util.ObserveAsEvents
 import kotlinx.coroutines.launch
+import androidx.compose.material3.Button
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.width
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -62,7 +62,6 @@ fun ChatScreen(
     val state by viewModel.state.collectAsState()
     val listState = rememberLazyListState()
     val clipboardManager = LocalClipboardManager.current
-    val snackbarHostState = remember { SnackbarHostState() }
 
     // Load conversation if ID is provided
     LaunchedEffect(conversationId) {
@@ -132,7 +131,7 @@ fun ChatScreen(
                         maxLines = 10
                     )
 
-                    Spacer(modifier = Modifier.padding(8.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
 
                     // Send button
                     IconButton(
@@ -160,8 +159,7 @@ fun ChatScreen(
                     }
                 }
             }
-        },
-        snackbarHost = { SnackbarHost(snackbarHostState) }
+        }
     ) { padding ->
         Surface(
             modifier = modifier.fillMaxSize(),
@@ -172,7 +170,7 @@ fun ChatScreen(
                     .fillMaxSize()
                     .padding(padding)
             ) {
-                if (state.messages.isEmpty() && !state.isThinking && state.currentStreamingMessage.isEmpty()) {
+                if (state.messages.isEmpty() && !state.isThinking && state.currentStreamingMessage.isEmpty() && state.error == null) {
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
@@ -194,6 +192,43 @@ fun ChatScreen(
                         .fillMaxWidth()
                         .weight(1f)
                 ) {
+                    // Error message & retry button (will appear at the very bottom because of reverseLayout)
+                    if (state.error != null) {
+                        item {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = state.error!!,
+                                    color = MaterialTheme.colorScheme.error,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+
+                                if (state.canRetry) {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Button(onClick = {
+                                        viewModel.onEvent(ChatEvent.OnRetry)
+                                    }) {
+                                        Text("Retry")
+                                    }
+                                } else {
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    IconButton(onClick = { viewModel.onEvent(ChatEvent.OnDismissError) }) {
+                                        Icon(
+                                            imageVector = Icons.Filled.Close,
+                                            contentDescription = "Dismiss Error",
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
                     // Extra placeholders (thinking/streaming) should be at the bottom when present
                     if (state.isThinking) {
                         item {
@@ -222,16 +257,9 @@ fun ChatScreen(
         }
     }
 
-    // Show snackbar above bottomBar
-    LaunchedEffect(state.error, state.canRetry) {
-        state.error?.let { message ->
-            val result = snackbarHostState.showSnackbar(
-                message = message,
-                actionLabel = if (state.canRetry) "Retry" else null
-            )
-            if (result == SnackbarResult.ActionPerformed && state.canRetry) {
-                viewModel.onEvent(ChatEvent.OnRetry)
-            }
+    // Automatically dismiss error when user starts typing again
+    LaunchedEffect(state.inputText) {
+        if (state.inputText.isNotBlank() && state.error != null && !state.canRetry) {
             viewModel.onEvent(ChatEvent.OnDismissError)
         }
     }
