@@ -134,14 +134,15 @@ fun ChatScreen(
                     Spacer(modifier = Modifier.width(8.dp))
 
                     // Send button
+                    val enabled = state.inputText.isNotBlank() && !state.isThinking && state.currentStreamingMessage.isEmpty()
                     IconButton(
                         onClick = { viewModel.onEvent(ChatEvent.OnSendMessage(state.inputText)) },
-                        enabled = state.inputText.isNotBlank() && !state.isThinking
+                        enabled = enabled
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.Send,
                             contentDescription = "Send",
-                            tint = if (state.inputText.isNotBlank() && !state.isThinking)
+                            tint = if (enabled)
                                 MaterialTheme.colorScheme.primary
                             else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
@@ -249,7 +250,8 @@ fun ChatScreen(
                             message = message,
                             onCopy = { clipboardManager.setText(AnnotatedString(message.content)) },
                             onPlay = { viewModel.onEvent(ChatEvent.OnPlayResponse(message.content, message.id)) },
-                            isSpeaking = state.speakingMessageId == message.id
+                            isSpeaking = state.speakingMessageId == message.id,
+                            isLoading = state.loadingSpeechMessageId == message.id,
                         )
                     }
                 }

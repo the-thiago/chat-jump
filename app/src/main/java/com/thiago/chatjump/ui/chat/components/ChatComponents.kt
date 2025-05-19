@@ -20,11 +20,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -105,7 +107,8 @@ fun MessageBubble(
     message: ChatMessage,
     onCopy: () -> Unit,
     onPlay: () -> Unit,
-    isSpeaking: Boolean = false
+    isSpeaking: Boolean = false,
+    isLoading: Boolean = false,
 ) {
     Column(
         modifier = Modifier
@@ -146,7 +149,8 @@ fun MessageBubble(
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 IconButton(onClick = onCopy) {
                     Icon(
@@ -156,12 +160,20 @@ fun MessageBubble(
                     )
                 }
                 Spacer(modifier = Modifier.width(8.dp))
-                IconButton(onClick = onPlay) {
-                    Icon(
-                        imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
-                        contentDescription = if (isSpeaking) "Stop" else "Play",
-                        tint = MaterialTheme.colorScheme.primary
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp).padding(start = 4.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.primary
                     )
+                } else {
+                    IconButton(onClick = onPlay) {
+                        Icon(
+                            imageVector = if (isSpeaking) Icons.Default.Stop else Icons.Default.PlayArrow,
+                            contentDescription = if (isSpeaking) "Stop" else "Play",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
                 }
             }
         }

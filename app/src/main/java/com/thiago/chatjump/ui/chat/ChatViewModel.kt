@@ -44,10 +44,18 @@ class ChatViewModel @Inject constructor(
     private var newChat = true
 
     init {
+        // Observe speaking / loading state from TTS to update UI flags
         viewModelScope.launch {
             textToSpeechRepositoryImpl.isSpeaking.collect { isSpeaking ->
-                if (!isSpeaking) {
-                    _state.update { it.copy(speakingMessageId = null) }
+                _state.update { current ->
+                    if (isSpeaking) {
+                        // Playback started: move loadingMessageId to speakingMessageId
+                        val msgId = current.speakingMessageId ?: current.loadingSpeechMessageId
+                        current.copy(speakingMessageId = msgId, loadingSpeechMessageId = null)
+                    } else {
+                        // Playback stopped: clear flags
+                        current.copy(speakingMessageId = null, loadingSpeechMessageId = null)
+                    }
                 }
             }
         }
@@ -131,7 +139,12 @@ class ChatViewModel @Inject constructor(
             _state.update { it.copy(speakingMessageId = null) }
         } else {
             textToSpeechRepositoryImpl.stop()
-            _state.update { it.copy(speakingMessageId = event.messageId) }
+            val isCached = event.text?.let { textToSpeechRepositoryImpl.isTextCached(it) } ?: true
+            if (isCached) {
+                _state.update { it.copy(speakingMessageId = event.messageId, loadingSpeechMessageId = null) }
+            } else {
+                _state.update { it.copy(loadingSpeechMessageId = event.messageId, speakingMessageId = null) }
+            }
             event.text?.let { textToSpeechRepositoryImpl.speak(it) }
         }
     }

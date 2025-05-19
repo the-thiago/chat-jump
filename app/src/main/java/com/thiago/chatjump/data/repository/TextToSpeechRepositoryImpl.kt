@@ -35,29 +35,24 @@ class TextToSpeechRepositoryImpl @Inject constructor(
     private var mediaPlayer: MediaPlayer? = null
 
     private val _isSpeaking = MutableStateFlow(false)
-    val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
+    override val isSpeaking: StateFlow<Boolean> = _isSpeaking.asStateFlow()
 
     override fun speak(text: String) {
         stop() // stop any previous playback
 
-        // Clean markdown for TTS
-        val cleanText = text.replace(Regex("`.*?`"), "")
-            .replace(Regex("\\*\\*|__"), "")
-            .replace(Regex("\\*|_"), "")
-            .replace(Regex("#+\\s"), "")
-            .replace(Regex("\\[.*?\\]\\(.*?\\)"), "")
-            .replace(Regex("-\\s"), "")
-            .replace(Regex("```.*?```"), "")
-            .trim()
+        val cleanText = clearMarkdown(text)
 
         if (scope == null) {
             scope = CoroutineScope(Dispatchers.IO + Job())
         }
         scope?.launch {
             try {
-                _isSpeaking.value = true
+                // Reset states
+                _isSpeaking.value = false
+
                 val cacheFile = getCacheFileForText(cleanText)
 
+                // Download if not cached
                 if (!cacheFile.exists()) {
                     val audioBytes = openAIDataSource.getSpeech(
                         SpeechRequest(
@@ -128,5 +123,21 @@ class TextToSpeechRepositoryImpl @Inject constructor(
         val md = MessageDigest.getInstance("SHA-256")
         val digest = md.digest(text.toByteArray())
         return BigInteger(1, digest).toString(16).padStart(64, '0')
+    }
+
+    override fun isTextCached(text: String): Boolean {
+        val cleanText = clearMarkdown(text)
+        return getCacheFileForText(cleanText).exists()
+    }
+
+    private fun clearMarkdown(text: String): String {
+        return text.replace(Regex("`.*?`"), "")
+            .replace(Regex("\\*\\*|__"), "")
+            .replace(Regex("\\*|_"), "")
+            .replace(Regex("#+\\s"), "")
+            .replace(Regex("\\[.*?\\]\\(.*?\\)"), "")
+            .replace(Regex("-\\s"), "")
+            .replace(Regex("```.*?```"), "")
+            .trim()
     }
 }
