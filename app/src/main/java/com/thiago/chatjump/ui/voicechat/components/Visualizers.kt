@@ -142,7 +142,9 @@ fun YarnBallVisualizer(
             val pulseMagnitude = basePulseMagnitude + amplitudeScaledPulse
 
             val lineSpecificPulseOffset = (i * PI.toFloat() * 0.75f) // Stagger pulses
-            val linePulseScale = 1f + pulseMagnitude * sin(individualPulsePhase + lineSpecificPulseOffset)
+            // Remap sin output from [-1, 1] to [0, 1] for an outward pulse effect
+            val pulseCycleProgress = (1f + sin(individualPulsePhase + lineSpecificPulseOffset)) / 2f
+            val linePulseScale = 1f + pulseMagnitude * pulseCycleProgress
 
             val lineRadius = orbitAdjustedRadius * linePulseScale
 
