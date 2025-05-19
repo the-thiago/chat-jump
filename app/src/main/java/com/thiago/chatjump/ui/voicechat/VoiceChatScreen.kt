@@ -1,6 +1,7 @@
 package com.thiago.chatjump.ui.voicechat
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -14,6 +15,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -156,44 +158,73 @@ fun VoiceChatScreen(viewModel: VoiceChatViewModel = hiltViewModel()) {
     }
 }
 
+@SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
 private fun VisualizerScreen(uiState: VoiceChatState) {
     // Smooth transition factor: 0f (user/yarn) -> 1f (AI/wave)
     val progress by animateFloatAsState(
         targetValue = if (uiState.isAiSpeaking) 1f else 0f,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
         label = "visualTransition"
     )
 
-    // Phase-split helpers so the yarn morph happens first, then we cross-fade
-    val morphProgress = (progress * 2f).coerceIn(0f, 1f)             // 0->1 during first half
-    val secondHalfFactor = ((progress - 0.5f) * 2f).coerceIn(0f, 1f) // 0 during first half, 0->1 during second half
+    // Define timings for the three-stage transition
+    val morphEndTime = 0.4f       // Yarn ball is flat at 40% of total progress
+    val holdAndExpandEndTime = 0.6f // Flat yarn line finishes expanding at 60%
 
-    Box(
+    // Calculate progress for each stage
+    // 1. Yarn ball morphing to a line (0 -> 1 during progress 0 -> morphEndTime, then stays 1)
+    val yarnMorphProgress = (progress / morphEndTime).coerceIn(0f, 1f)
+
+    // 2. Flat yarn line expanding horizontally (0 -> 1 during progress morphEndTime -> holdAndExpandEndTime)
+    val yarnExpansionProgress = if (progress < morphEndTime) 0f
+                            else ((progress - morphEndTime) / (holdAndExpandEndTime - morphEndTime)).coerceIn(0f, 1f)
+
+    // 3. Cross-fade between expanded flat yarn line and waveform (0 -> 1 during progress holdAndExpandEndTime -> 1f)
+    val crossFadeProgress = if (progress < holdAndExpandEndTime) 0f
+                        else ((progress - holdAndExpandEndTime) / (1f - holdAndExpandEndTime)).coerceIn(0f, 1f)
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Yarn Ball first morphs to a flat line (morphProgress) and only then fades out
+        val canvasWidth = constraints.maxWidth.toFloat()
+        // YarnBallVisualizer's Canvas is fillMaxSize, so its internal 'size.minDimension' will be based on these constraints.
+        // Its flat line has a natural width of its_canvas.size.minDimension * 0.5f.
+        val yarnBallCanvasMinDim = kotlin.math.min(constraints.maxWidth, constraints.maxHeight).toFloat()
+        val yarnNaturalFlatLineWidth = yarnBallCanvasMinDim * 0.5f
+        val targetYarnScaleXToFillWidth = if (yarnNaturalFlatLineWidth > 0f) canvasWidth / yarnNaturalFlatLineWidth else 1f
+
+        // Current scale for YarnBall: starts at 1, expands during holdAndExpandProgress, then stays expanded.
+        val yarnCurrentScaleX = 1f + (targetYarnScaleXToFillWidth - 1f) * yarnExpansionProgress
+
+        // Yarn Ball: morphs, then expands horizontally, then fades out
         YarnBallVisualizer(
             isRecording = uiState.isRecording,
             amplitude = uiState.userAmplitude,
-            morphToLineProgress = morphProgress,
+            morphToLineProgress = yarnMorphProgress,
             modifier = Modifier.graphicsLayer {
-                // Visible for the whole first half, then fades & scales down
-                alpha = 1f - secondHalfFactor
-                scaleX = 1f - 0.2f * secondHalfFactor
-                scaleY = 1f - 0.2f * secondHalfFactor
+                alpha = 1f - crossFadeProgress // Fades out during the final cross-fade phase
+
+                // Apply horizontal scaling only after morphing is complete
+                if (progress >= morphEndTime) {
+                    scaleX = yarnCurrentScaleX
+                    // Optional: Counter-scale Y to keep line thickness somewhat constant if it becomes too thick.
+                    // This depends on the desired visual. For a simple line, thickness often scales with X.
+                    // if (yarnCurrentScaleX > 1f) scaleY = 1f / yarnCurrentScaleX.pow(0.5f) // Example: less aggressive counter-scale
+                }
             }
         )
 
-        // Waveform stays hidden until the yarn is flat, then fades/zooms in
+        // Waveform: stays hidden until cross-fade, then fades/zooms in
         WaveformVisualizer(
             amplitude = uiState.aiAmplitude,
             modifier = Modifier.graphicsLayer {
-                alpha = secondHalfFactor
-                scaleX = 0.8f + 0.2f * secondHalfFactor
-                scaleY = 0.8f + 0.2f * secondHalfFactor
+                alpha = crossFadeProgress // Fades in during the final cross-fade phase
+                // Standard intro scale, or adjust if it needs to match the expanded yarn line's perceived size better.
+                scaleX = 0.8f + 0.2f * crossFadeProgress
+                scaleY = 0.8f + 0.2f * crossFadeProgress
             }
         )
 
