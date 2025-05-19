@@ -49,6 +49,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -128,7 +129,8 @@ fun ChatScreen(
                         onValueChange = { viewModel.onEvent(ChatEvent.OnInputTextChange(it)) },
                         modifier = Modifier.weight(1f),
                         placeholder = { Text("Ask anything") },
-                        maxLines = 10
+                        maxLines = 10,
+                        shape = RoundedCornerShape(16.dp)
                     )
 
                     Spacer(modifier = Modifier.width(8.dp))
