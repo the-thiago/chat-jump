@@ -208,7 +208,10 @@ fun StreamingMessageBubble(
             .background(MaterialTheme.colorScheme.primary)
             .padding(16.dp)
     ) {
-        FlowRow {
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(0.dp),
+            verticalArrangement = Arrangement.Top
+        ) {
             tokens.forEach { char ->
                 // Each token gets its own alpha animation that starts as soon as it appears
                 val alpha = remember { Animatable(0f) }
@@ -218,7 +221,7 @@ fun StreamingMessageBubble(
                 Text(
                     text = char.toString(),
                     color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 16.sp,
+                    style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onPrimary),
                     modifier = Modifier.graphicsLayer { this.alpha = alpha.value }
                 )
             }
