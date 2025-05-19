@@ -117,8 +117,12 @@ fun YarnBallVisualizer(
             val depthRaw = (cos(angleRad) + 1f) / 2f
             val depth = depthRaw * (1f - morphToLineProgress) + morphToLineProgress // smoothly approach 1f
 
-            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.4f)
-            val color = baseColor.copy(alpha = 0.3f + 0.7f * depth)
+            // As we collapse into one line, diminish the contribution from multiple
+            // overlapping strokes so the final line isn't excessively thick.
+            val strokeScale = 1f - morphToLineProgress + morphToLineProgress / lines
+
+            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.4f) * strokeScale
+            val color = baseColor.copy(alpha = (0.3f + 0.7f * depth) * strokeScale)
 
             val path = Path().apply {
                 moveTo(start.x, start.y)
@@ -182,10 +186,11 @@ fun WaveformVisualizer(
             val env = (1f - (progress - 0.5f).let { it * it * 4f }.coerceIn(0f, 1f)) // subtle tapering near edges
 
             val y = centerY + (fundamental + harmonic) * maxAmp * amplitude * breath * env
+            val yPinned = if (i == 0 || i == points) centerY else y
             if (i == 0) {
-                path.moveTo(x, y)
+                path.moveTo(x, yPinned)
             } else {
-                path.lineTo(x, y)
+                path.lineTo(x, yPinned)
             }
         }
         drawPath(
