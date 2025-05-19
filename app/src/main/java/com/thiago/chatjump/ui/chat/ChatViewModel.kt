@@ -83,9 +83,11 @@ class ChatViewModel @Inject constructor(
                     _state.update { it.copy(error = "No internet connection", canRetry = false) }
                     return
                 }
-                pendingUserMessage?.let {
-                    createConversationTitle(it)
-                    getAIResponse()
+                viewModelScope.launch {
+                    if (pendingUserMessage != null) {
+                        createConversationTitle()
+                        getAIResponse()
+                    }
                 }
             }
             ChatEvent.OnDismissError -> {
@@ -110,6 +112,7 @@ class ChatViewModel @Inject constructor(
 
     private fun handleSend(userMessage: ChatMessage) {
         pendingUserMessage = userMessage
+        // Add user message to the ui list
         viewModelScope.launch {
             _state.update { currentState ->
                 currentState.copy(
@@ -121,15 +124,10 @@ class ChatViewModel @Inject constructor(
             delay(50L) // To make sure the thinking bubble is visible
             eventChannel.send(ChatUiEvent.ScrollToBottom)
         }
-
         viewModelScope.launch {
-            currentConversationId?.let { conversationId ->
-                chatRepository.saveMessage(conversationId, userMessage)
-            }
+            createConversationTitle()
+            getAIResponse()
         }
-
-        createConversationTitle(userMessage)
-        getAIResponse()
     }
 
     override fun onCleared() {
@@ -165,78 +163,80 @@ class ChatViewModel @Inject constructor(
         }
     }
 
-    private fun getAIResponse() {
-        viewModelScope.launch {
-            _state.update { it.copy(isThinking = true, error = null, canRetry = false) }
-            try {
-                eventChannel.send(ChatUiEvent.ScrollToBottom)
-                delay(300L) // To Show the thinking bubble
+    private suspend fun getAIResponse() {
+        try {
+            eventChannel.send(ChatUiEvent.ScrollToBottom)
+            delay(200L) // To Show the thinking bubble
 
-                var accumulatedResponse = ""
+            var accumulatedResponse = ""
 
-                getAIResponseUseCase(_state.value.messages).collect { response ->
-                    accumulatedResponse += response
-                    _state.update {
-                        it.copy(
-                            currentStreamingMessage = accumulatedResponse,
-                            isThinking = false,
-                        )
-                    }
-                    eventChannel.send(ChatUiEvent.ScrollToBottom)
+            currentConversationId?.let { conversationId ->
+                chatRepository.saveMessage(conversationId, pendingUserMessage!!)
+            }
+
+            getAIResponseUseCase(_state.value.messages).collect { response ->
+                accumulatedResponse += response
+                _state.update {
+                    it.copy(
+                        currentStreamingMessage = accumulatedResponse,
+                        isThinking = false,
+                    )
                 }
+                eventChannel.send(ChatUiEvent.ScrollToBottom)
+            }
 
-                val aiMessage = ChatMessage(
-                    id = UUID.randomUUID().toString(),
-                    content = accumulatedResponse,
-                    isUser = false
+            val aiMessage = ChatMessage(
+                id = UUID.randomUUID().toString(),
+                content = accumulatedResponse,
+                isUser = false
+            )
+            eventChannel.send(ChatUiEvent.ScrollToBottom)
+
+            _state.update {
+                it.copy(
+                    messages = it.messages + aiMessage,
+                    currentStreamingMessage = "",
+                    isThinking = false,
                 )
-                eventChannel.send(ChatUiEvent.ScrollToBottom)
-
-                _state.update {
-                    it.copy(
-                        messages = it.messages + aiMessage,
-                        currentStreamingMessage = "",
-                        isThinking = false,
-                    )
-                }
-                eventChannel.send(ChatUiEvent.ScrollToBottom)
-
-                currentConversationId?.let { conversationId ->
-                    chatRepository.saveMessage(conversationId, aiMessage)
-                }
-
-                pendingUserMessage = null
-            } catch (e: Exception) {
-                Log.e("ChatViewModel", "Error getting AI response: ${e.message}")
-                _state.update {
-                    it.copy(
-                        isThinking = false,
-                        currentStreamingMessage = "",
-                        error = "Failed to response. Please try again.",
-                        canRetry = true,
-                    )
-                }
             }
             eventChannel.send(ChatUiEvent.ScrollToBottom)
+
+            currentConversationId?.let { conversationId ->
+                chatRepository.saveMessage(conversationId, aiMessage)
+            }
+
+            pendingUserMessage = null
+        } catch (e: Exception) {
+            Log.e("ChatViewModel", "Error getting AI response: ${e.message}")
+            setTryAgainState()
         }
+        eventChannel.send(ChatUiEvent.ScrollToBottom)
     }
 
-    private fun createConversationTitle(userMessage: ChatMessage) {
+    private suspend fun createConversationTitle() {
+        _state.update { it.copy(isThinking = true, error = null, canRetry = false) }
         if (newChat) {
-            viewModelScope.launch {
-                try {
-                    createConversationTitleUseCase(userMessage).collect { title ->
-                        // Create new conversation with the generated title
-                        currentConversationId = chatRepository.createConversation(title)
-                        currentConversationId?.let { conversationId ->
-                            chatRepository.saveMessage(conversationId, userMessage)
-                        }
-                        newChat = false
-                    }
-                } catch (e: Exception) {
-                    Log.e("ChatViewModel", "Error generating title, it will generated again when this conversation is opened again or on retry: ${e.message}")
+            try {
+                createConversationTitleUseCase(pendingUserMessage!!).collect { title ->
+                    // Create new conversation with the generated title
+                    currentConversationId = chatRepository.createConversation(title)
+                    newChat = false
                 }
+            } catch (e: Exception) {
+                Log.e("ChatViewModel", "Error generating title, it will generated again when this conversation is opened again or on retry: ${e.message}")
+                setTryAgainState()
             }
         }
     }
-} 
+
+    private fun setTryAgainState() {
+        _state.update {
+            it.copy(
+                isThinking = false,
+                currentStreamingMessage = "",
+                error = "Failed to respond. Please try again.",
+                canRetry = true,
+            )
+        }
+    }
+}
