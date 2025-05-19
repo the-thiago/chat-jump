@@ -174,6 +174,7 @@ private fun VisualizerScreen(uiState: VoiceChatState) {
         YarnBallVisualizer(
             isRecording = uiState.isRecording,
             amplitude = uiState.userAmplitude,
+            morphToLineProgress = progress,
             modifier = Modifier.graphicsLayer {
                 alpha = 1f - progress
                 scaleX = 1f - 0.2f * progress

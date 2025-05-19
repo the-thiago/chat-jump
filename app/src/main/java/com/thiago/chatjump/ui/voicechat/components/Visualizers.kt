@@ -32,6 +32,8 @@ import kotlin.math.sin
 fun YarnBallVisualizer(
     isRecording: Boolean,
     amplitude: Float = 0f,
+    // 0f = full yarn ball, 1f = totally flattened into a single line
+    morphToLineProgress: Float = 0f,
     modifier: Modifier = Modifier
 ) {
     // Simple infinite rotation based on time
@@ -53,8 +55,8 @@ fun YarnBallVisualizer(
     )
 
     val baseStroke = if (isRecording) 6f else 4f
-    // Dynamic hue cycling for a more vivid look
-    val hueBase = ((rotation + amplitude * 360f) * 0.4f + if (isRecording) 160f else 220f) % 360f
+    // Freeze the hue shift as we morph so that the colour transition also calms down.
+    val hueBase = ((rotation * (1f - morphToLineProgress) + amplitude * 360f) * 0.4f + if (isRecording) 160f else 220f) % 360f
     val baseColor = Color.hsv(hueBase, 0.7f, 1f)
 
     // Pulse scale controls ball breathing
@@ -95,7 +97,8 @@ fun YarnBallVisualizer(
 
         val lines = 6 // more threads for a fuller ball
         for (i in 0 until lines) {
-            val angleDeg = rotation + i * 360f / lines
+            // As morph progresses we bring all the angles towards 0° (horizontal)
+            val angleDeg = (rotation * (1f - morphToLineProgress)) + i * 360f / lines * (1f - morphToLineProgress)
             val angleRad = Math.toRadians(angleDeg.toDouble()).toFloat()
 
             // Direction unit vector
@@ -107,12 +110,14 @@ fun YarnBallVisualizer(
 
             // Perpendicular vector for control point
             val perp = Offset(-dy, dx)
-            val curvatureMag = radius * 0.35f * (0.6f + 0.4f * sin(curvaturePhase + i) + amplitude * 0.5f)
+            // Gradually remove curvature so threads become straight
+            val curvatureMag = radius * 0.35f * (0.6f + 0.4f * sin(curvaturePhase + i) + amplitude * 0.5f) * (1f - morphToLineProgress)
             val control = Offset(center.x + perp.x * curvatureMag, center.y + perp.y * curvatureMag)
 
-            val depth = (cos(angleRad) + 1f) / 2f // 0 (back) .. 1 (front)
+            val depthRaw = (cos(angleRad) + 1f) / 2f
+            val depth = depthRaw * (1f - morphToLineProgress) + morphToLineProgress // smoothly approach 1f
 
-            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.8f)
+            val strokeWidth = baseStroke * (0.6f + 0.8f * depth) * (1f + amplitude * 0.4f)
             val color = baseColor.copy(alpha = 0.3f + 0.7f * depth)
 
             val path = Path().apply {
@@ -160,7 +165,7 @@ fun WaveformVisualizer(
     )
 
     // Derive a hue similar to the YarnBall formula so both visualizers stay in sync.
-    val hueBase = (((phase * 180f / PI).toFloat() + amplitude * 360f) * 0.4f + 220f) % 360f
+    val hueBase = (((phase * 180f / PI.toFloat()) + amplitude * 360f) * 0.4f + 220f) % 360f
     val baseColor = Color.hsv(hueBase, 0.7f, 1f)
 
     Canvas(modifier = modifier.fillMaxSize()) {
