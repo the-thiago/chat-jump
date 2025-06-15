@@ -1,5 +1,9 @@
 # ChatJump
 
+<div align="center">
+  <video src="https://github.com/user-attachments/assets/5db33177-59aa-45d1-a8c2-32b4a94b7199" controls width="500"></video>
+</div>
+
 ChatJump is an Android application that lets you chat with OpenAI-powered assistants both through text and voice.  It demonstrates a modern Android stack (Compose, Hilt, Room, Retrofit/OkHttp) organised around an **MVI (Model-View-Intent)** architecture.
 
 ---
